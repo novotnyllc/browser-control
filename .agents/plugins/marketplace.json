@@ -1,7 +1,8 @@
 {
   "name": "browser-control",
   "interface": {
-    "displayName": "Browser Control"
+    "displayName": "Browser Control",
+    "logo": "./plugins/browser-control/assets/logo.png"
   },
   "plugins": [
     {

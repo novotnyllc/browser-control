@@ -30,6 +30,8 @@
       "use Edge Dev for this browser task"
     ],
     "brandColor": "#2563EB",
-    "screenshots": []
+    "screenshots": [],
+    "composerIcon": "./assets/icon.png",
+    "logo": "./assets/logo.png"
   }
 }

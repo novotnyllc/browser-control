@@ -649,6 +649,24 @@ test("validation script runs without ripgrep and metadata has no placeholder URL
   assert.equal(metadata.includes("example.com"), false);
 });
 
+test("plugin manifest references correctly sized icon assets", () => {
+  const root = path.resolve(new URL("..", import.meta.url).pathname);
+  const metadata = JSON.parse(readFileSync(path.join(root, ".codex-plugin", "plugin.json"), "utf8"));
+  assert.equal(metadata.interface.composerIcon, "./assets/icon.png");
+  assert.equal(metadata.interface.logo, "./assets/logo.png");
+  assert.deepEqual(pngSize(path.join(root, "assets", "icon.png")), { width: 512, height: 512 });
+  assert.deepEqual(pngSize(path.join(root, "assets", "logo.png")), { width: 1024, height: 1024 });
+});
+
+function pngSize(filePath) {
+  const buffer = readFileSync(filePath);
+  assert.equal(buffer.toString("ascii", 1, 4), "PNG");
+  return {
+    width: buffer.readUInt32BE(16),
+    height: buffer.readUInt32BE(20)
+  };
+}
+
 function mockAgent(backends) {
   const byId = new Map(backends.map((backend) => [backend.info.id, backend]));
   return {
