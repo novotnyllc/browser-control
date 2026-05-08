@@ -1,0 +1,14 @@
+{
+  "name": "codex-browser-control",
+  "version": "0.1.0",
+  "license": "MIT",
+  "type": "module",
+  "description": "Codex browser automation channel support for Chrome and Microsoft Edge.",
+  "scripts": {
+    "test": "node --test",
+    "check:syntax": "node scripts/check-syntax.mjs",
+    "check:runtime": "node scripts/check-bundled-runtime.mjs --json",
+    "validate:paths": "node scripts/validate-no-local-paths.mjs",
+    "validate": "npm run check:syntax && npm test && npm run check:runtime && npm run validate:paths"
+  }
+}

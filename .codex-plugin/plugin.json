@@ -1,0 +1,38 @@
+{
+  "name": "browser-control",
+  "version": "0.1.0",
+  "description": "Browser automation setup and routing support for Chrome and Microsoft Edge stable, beta, dev, and canary channels.",
+  "author": {
+    "name": "Browser Control contributors"
+  },
+  "homepage": "https://example.com/browser-control",
+  "repository": "https://example.com/browser-control",
+  "license": "MIT",
+  "keywords": [
+    "browser",
+    "chrome",
+    "edge",
+    "automation"
+  ],
+  "skills": "./skills/",
+  "interface": {
+    "displayName": "Browser Control",
+    "shortDescription": "Control Chrome and Edge channels with Codex",
+    "longDescription": "Browser Control adds setup, detection, native-host manifest management, and runtime routing guidance for Chrome and Microsoft Edge stable, beta, dev, and canary channels. Browser content may include sensitive information from logged-in sites.",
+    "developerName": "Browser Control contributors",
+    "category": "Productivity",
+    "capabilities": [
+      "Interactive",
+      "Read"
+    ],
+    "websiteURL": "https://example.com/browser-control",
+    "privacyPolicyURL": "https://openai.com/policies/row-privacy-policy/",
+    "termsOfServiceURL": "https://openai.com/policies/row-terms-of-use/",
+    "defaultPrompt": [
+      "use Chrome Dev for this browser task",
+      "use Edge Dev for this browser task"
+    ],
+    "brandColor": "#2563EB",
+    "screenshots": []
+  }
+}
