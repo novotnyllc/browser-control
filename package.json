@@ -1,15 +1,15 @@
 {
-  "name": "codex-browser-control",
+  "name": "browser-control-marketplace",
   "version": "0.1.0",
-  "license": "MIT",
+  "private": true,
   "type": "module",
-  "description": "Codex browser automation channel support for Chrome and Microsoft Edge.",
+  "description": "Marketplace wrapper for the Browser Control Codex plugin.",
   "scripts": {
-    "test": "node --test",
-    "check:syntax": "node scripts/check-syntax.mjs",
-    "check:runtime": "node scripts/check-bundled-runtime.mjs --json",
-    "validate:paths": "node scripts/validate-no-local-paths.mjs",
-    "validate": "npm run check:syntax && npm test && npm run validate:paths",
-    "validate:runtime": "npm run check:runtime"
+    "test": "npm --prefix plugins/browser-control test",
+    "check:syntax": "npm --prefix plugins/browser-control run check:syntax",
+    "check:runtime": "npm --prefix plugins/browser-control run check:runtime",
+    "validate:paths": "npm --prefix plugins/browser-control run validate:paths",
+    "validate": "npm --prefix plugins/browser-control run validate",
+    "validate:runtime": "npm --prefix plugins/browser-control run validate:runtime"
   }
 }

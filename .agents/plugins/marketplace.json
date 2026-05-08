@@ -8,7 +8,7 @@
       "name": "browser-control",
       "source": {
         "source": "local",
-        "path": "./"
+        "path": "./plugins/browser-control"
       },
       "policy": {
         "installation": "AVAILABLE",
