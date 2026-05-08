@@ -1,4 +1,8 @@
 import assert from "node:assert/strict";
+import { spawnSync } from "node:child_process";
+import { mkdtempSync, mkdirSync, readFileSync, rmSync, writeFileSync } from "node:fs";
+import os from "node:os";
+import path from "node:path";
 import test from "node:test";
 
 import { EXTENSION_ID, getTarget, TARGETS, targetIds } from "../src/targets.mjs";
@@ -11,11 +15,16 @@ import {
 } from "../scripts/lib/paths.mjs";
 import {
   enrichBackendsFromExistingTabs,
+  enrichBackendsFromProcesses,
   mapExtensionHostSockets,
   parseLsofUnixSockets,
   parsePsProcesses
 } from "../scripts/lib/runtime-backends.mjs";
-import { chooseExtensionProfile } from "../scripts/lib/profiles.mjs";
+import { browserInstallationStatus, browserRunningStatus } from "../scripts/lib/browser-detection.mjs";
+import { commandForTarget } from "../scripts/lib/open-browser-command.mjs";
+import { compareNativeHostManifest, nativeHostStatus } from "../scripts/lib/native-host-status.mjs";
+import { browserProfileState, candidateProfiles, chooseExtensionProfile } from "../scripts/lib/profiles.mjs";
+import { runRuntimeProof } from "../scripts/lib/runtime-proof-runner.mjs";
 import { chooseBrowserTarget } from "../scripts/lib/browser-selection.mjs";
 
 test("defines every required browser target", () => {
@@ -303,6 +312,343 @@ test("browser selection defaults to running browser with most recent selected pr
   assert.equal(selection.selected.targetId, "edge-dev");
 });
 
+test("process enrichment is tab-free and resolves singleton socket mapping", async () => {
+  const socketDir = "/socket-root/codex-browser-use";
+  const agentLike = tabFailingAgent([
+    { id: "backend-1", name: "Chrome", type: "extension" }
+  ]);
+  const resolved = await enrichBackendsFromProcesses(agentLike, socketMappingOptions({
+    socketDir,
+    socketNames: ["chrome.sock"],
+    lsofRows: [`extension 202 user 3u unix 0x2 0t0 ${socketDir}/chrome.sock`],
+    psRows: [
+      "202 2002 /bundle/extension-host chrome-extension://id/",
+      "2002 1 /Applications/Google Chrome Dev.app/Contents/MacOS/Google Chrome Dev"
+    ]
+  }));
+
+  assert.equal(resolved[0].resolved, true);
+  assert.equal(resolved[0].backend.targetId, "chrome-dev");
+  assert.equal(resolved[0].backend.identitySource, "extension-host-parent-process");
+});
+
+test("process enrichment does not assign multiple backend mappings by array index", async () => {
+  const socketDir = "/socket-root/codex-browser-use";
+  const agentLike = tabFailingAgent([
+    { id: "backend-chrome", name: "Chrome", type: "extension" },
+    { id: "backend-edge", name: "Chrome", type: "extension" }
+  ]);
+  const resolved = await enrichBackendsFromProcesses(agentLike, socketMappingOptions({
+    socketDir,
+    socketNames: ["edge.sock", "chrome.sock"],
+    lsofRows: [
+      `extension 101 user 3u unix 0x1 0t0 ${socketDir}/edge.sock`,
+      `extension 202 user 3u unix 0x2 0t0 ${socketDir}/chrome.sock`
+    ],
+    psRows: [
+      "101 1001 /bundle/extension-host chrome-extension://id/",
+      "202 2002 /bundle/extension-host chrome-extension://id/",
+      "1001 1 /Applications/Microsoft Edge Dev.app/Contents/MacOS/Microsoft Edge Dev",
+      "2002 1 /Applications/Google Chrome Dev.app/Contents/MacOS/Google Chrome Dev"
+    ]
+  }));
+
+  assert.equal(resolved.length, 2);
+  assert.equal(resolved[0].resolved, false);
+  assert.equal(resolved[0].reason, "process-socket-association-unavailable");
+  assert.equal(resolved[1].resolved, false);
+});
+
+test("process enrichment resolves pid-associated mappings without relying on order", async () => {
+  const socketDir = "/socket-root/codex-browser-use";
+  const agentLike = tabFailingAgent([
+    { id: "backend-chrome", name: "Chrome", type: "extension", extensionHostPid: 202 },
+    { id: "backend-edge", name: "Chrome", type: "extension", extensionHostPid: 101 }
+  ]);
+  const resolved = await enrichBackendsFromProcesses(agentLike, socketMappingOptions({
+    socketDir,
+    socketNames: ["edge.sock", "chrome.sock"],
+    lsofRows: [
+      `extension 101 user 3u unix 0x1 0t0 ${socketDir}/edge.sock`,
+      `extension 202 user 3u unix 0x2 0t0 ${socketDir}/chrome.sock`
+    ],
+    psRows: [
+      "101 1001 /bundle/extension-host chrome-extension://id/",
+      "202 2002 /bundle/extension-host chrome-extension://id/",
+      "1001 1 /Applications/Microsoft Edge Dev.app/Contents/MacOS/Microsoft Edge Dev",
+      "2002 1 /Applications/Google Chrome Dev.app/Contents/MacOS/Google Chrome Dev"
+    ]
+  }));
+
+  assert.equal(resolved[0].resolved, true);
+  assert.equal(resolved[0].backend.targetId, "chrome-dev");
+  assert.equal(resolved[1].backend.targetId, "edge-dev");
+});
+
+test("runtime proof default omits tab details and does not inspect tabs", async () => {
+  const socketDir = "/socket-root/codex-browser-use";
+  const agentLike = tabFailingAgent([
+    { id: "backend-1", name: "Chrome", type: "extension" }
+  ]);
+  const result = await runRuntimeProof({
+    target: TARGETS["chrome-dev"],
+    agentLike,
+    includeTabs: false,
+    enrichOptions: socketMappingOptions({
+      socketDir,
+      socketNames: ["chrome.sock"],
+      lsofRows: [`extension 202 user 3u unix 0x2 0t0 ${socketDir}/chrome.sock`],
+      psRows: [
+        "202 2002 /bundle/extension-host chrome-extension://id/",
+        "2002 1 /Applications/Google Chrome Dev.app/Contents/MacOS/Google Chrome Dev"
+      ]
+    })
+  });
+
+  assert.equal(result.tabInspection, "not-requested");
+  assert.equal("tabSummary" in result, false);
+  assert.equal("openTabsCount" in result, false);
+});
+
+test("profile state handles malformed and missing Local State without crashing", () => {
+  const root = mkdtempSync(path.join(os.tmpdir(), "browser-control-profile-"));
+  try {
+    mkdirSync(path.join(root, "Default"), { recursive: true });
+    writeFileSync(path.join(root, "Local State"), "{not json", "utf8");
+
+    const invalid = browserProfileState(root);
+    assert.equal(invalid.status, "invalid-json");
+    assert.equal(invalid.lastUsedProfile, null);
+    assert.deepEqual(candidateProfiles(root, invalid), ["Default"]);
+
+    writeFileSync(path.join(root, "Local State"), "null", "utf8");
+    const wrongRoot = browserProfileState(root);
+    assert.equal(wrongRoot.status, "invalid-json");
+
+    writeFileSync(path.join(root, "Local State"), JSON.stringify({ profile: { profiles_order: "Default", info_cache: [] } }), "utf8");
+    const wrongNested = browserProfileState(root);
+    assert.equal(wrongNested.status, "ok");
+    assert.deepEqual(wrongNested.profilesOrder, []);
+    assert.deepEqual(wrongNested.profileInfo, {});
+
+    rmSync(path.join(root, "Local State"));
+    const missing = browserProfileState(root);
+    assert.equal(missing.status, "missing");
+  } finally {
+    rmSync(root, { recursive: true, force: true });
+  }
+});
+
+test("explicit profile selection can proceed when Local State is malformed", () => {
+  const selected = chooseExtensionProfile({
+    lastUsedProfile: null,
+    profileDirectory: "Profile 1",
+    profileStateStatus: "invalid-json",
+    profileStateError: { kind: "invalid-json", message: "bad json" },
+    profiles: [],
+    inspectRequestedProfile: (profileDirectory) => ({
+      profileDirectory,
+      displayLabel: profileDirectory,
+      installed: true
+    })
+  });
+
+  assert.equal(selected.status, "selected");
+  assert.equal(selected.reason, "explicit-profile");
+  assert.equal(selected.profileStateStatus, "invalid-json");
+  assert.equal(selected.selectedProfile.profileDirectory, "Profile 1");
+});
+
+test("browser detection redacts process command details by default", () => {
+  const target = TARGETS["chrome-dev"];
+  const expected = "C:\\Users\\me\\AppData\\Local\\Google\\Chrome Dev\\Application\\chrome.exe";
+  const redacted = browserRunningStatus(target, {
+    platform: "win32",
+    env: { LOCALAPPDATA: "C:\\Users\\me\\AppData\\Local" },
+    existsSync: (candidate) => candidate === expected,
+    processes: [{ pid: 10, executablePath: expected, commandLine: `"${expected}" --profile-directory=Profile 1` }]
+  });
+  assert.equal(redacted.running, true);
+  assert.deepEqual(Object.keys(redacted.matches[0]).sort(), ["executableName", "pid"]);
+
+  const sensitive = browserRunningStatus(target, {
+    platform: "win32",
+    env: { LOCALAPPDATA: "C:\\Users\\me\\AppData\\Local" },
+    existsSync: (candidate) => candidate === expected,
+    includeSensitive: true,
+    processes: [{ pid: 10, executablePath: expected, commandLine: `"${expected}" --profile-directory=Profile 1` }]
+  });
+  assert.ok(sensitive.matches[0].commandLine.includes("Profile 1"));
+});
+
+test("Windows detection uses channel-specific executable paths and avoids generic channel matches", () => {
+  const target = TARGETS["chrome-dev"];
+  const env = { LOCALAPPDATA: "C:\\Users\\me\\AppData\\Local" };
+  const expected = "C:\\Users\\me\\AppData\\Local\\Google\\Chrome Dev\\Application\\chrome.exe";
+  const install = browserInstallationStatus(target, {
+    platform: "win32",
+    env,
+    existsSync: (candidate) => candidate === expected,
+    includeSensitive: true
+  });
+  assert.equal(install.installed, true);
+  assert.equal(install.executablePath, expected);
+
+  const exact = browserRunningStatus(target, {
+    platform: "win32",
+    env,
+    existsSync: (candidate) => candidate === expected,
+    includeSensitive: true,
+    processes: [{ pid: 10, executablePath: expected, commandLine: `"${expected}" --profile-directory=Default` }]
+  });
+  assert.equal(exact.running, true);
+
+  const generic = browserRunningStatus(target, {
+    platform: "win32",
+    env,
+    existsSync: () => false,
+    processes: [{ pid: 11, executablePath: "chrome.exe", commandLine: "chrome.exe" }]
+  });
+  assert.equal(generic.running, false);
+  assert.equal(generic.status, "unknown");
+});
+
+test("Windows background launch command preserves separate browser arguments", () => {
+  const target = TARGETS["edge-dev"];
+  const expected = "C:\\Users\\me\\AppData\\Local\\Microsoft\\Edge Dev\\Application\\msedge.exe";
+  const command = commandForTarget(target, {
+    background: true,
+    profileDirectory: "Profile 1",
+    url: null
+  }, {
+    platform: "win32",
+    env: { LOCALAPPDATA: "C:\\Users\\me\\AppData\\Local" },
+    existsSync: (candidate) => candidate === expected
+  });
+
+  assert.equal(command.command, "powershell.exe");
+  assert.ok(command.args.includes(expected));
+  assert.ok(command.args.includes('"--profile-directory=Profile 1"'));
+  assert.equal(command.args.some((arg) => arg.includes("--profile-directory=Profile 1 about:blank")), false);
+});
+
+test("native-host manifest comparison is structural and registry-aware", () => {
+  const target = TARGETS["chrome-dev"];
+  const expected = {
+    ...manifestFor(target, { extensionHost: "/opt/extension-host" }),
+    path: "C:\\Host\\extension-host.exe"
+  };
+  const actual = {
+    allowed_origins: ["chrome-extension://other/", expected.allowed_origins[0]],
+    extra: true,
+    path: "c:\\host\\extension-host.exe",
+    type: "stdio",
+    name: expected.name
+  };
+  const comparison = compareNativeHostManifest(actual, expected, "win32");
+  assert.equal(comparison.matches, true);
+
+  const statusExpected = manifestFor(target, { extensionHost: "/opt/extension-host" });
+  const status = nativeHostStatus(target, {
+    platform: "win32",
+    extensionHost: "/opt/extension-host",
+    manifestPath: "C:\\manifest.json",
+    actualManifest: statusExpected,
+    execFileSync: () => "    (Default)    REG_SZ    C:\\manifest.json.bak"
+  });
+  assert.equal(status.matches, false);
+  assert.ok(status.reasons.includes("registry-path-mismatch"));
+});
+
+test("check-extension JSON redacts profile/account details by default", () => {
+  const root = path.resolve(new URL("..", import.meta.url).pathname);
+  const home = mkdtempSync(path.join(os.tmpdir(), "browser-control-home-"));
+  try {
+    const profileRoot = path.join(home, "Library", "Application Support", "Google", "Chrome Dev");
+    const extensionDir = path.join(profileRoot, "Profile 1", "Extensions", EXTENSION_ID, "1.0.0");
+    mkdirSync(extensionDir, { recursive: true });
+    writeFileSync(path.join(profileRoot, "Local State"), JSON.stringify({
+      profile: {
+        last_used: "Profile 1",
+        profiles_order: ["Profile 1"],
+        info_cache: { "Profile 1": { name: "Work", user_name: "work@example.test" } }
+      }
+    }));
+
+    const redacted = spawnSync(process.execPath, [
+      "scripts/check-extension.mjs",
+      "--target", "chrome-dev",
+      "--profile-directory", "Profile 1",
+      "--json"
+    ], { cwd: root, env: { ...process.env, HOME: home }, encoding: "utf8" });
+    assert.equal(redacted.status, 0, redacted.stderr || redacted.stdout);
+    const redactedJson = JSON.parse(redacted.stdout);
+    assert.equal(redactedJson.selectedProfile.profileDirectory, "Profile 1");
+    assert.equal("displayLabel" in redactedJson.selectedProfile, false);
+    assert.equal("user" in redactedJson.selectedProfile, false);
+    assert.equal("extensionDir" in redactedJson.selectedProfile, false);
+
+    const sensitive = spawnSync(process.execPath, [
+      "scripts/check-extension.mjs",
+      "--target", "chrome-dev",
+      "--profile-directory", "Profile 1",
+      "--json",
+      "--include-sensitive"
+    ], { cwd: root, env: { ...process.env, HOME: home }, encoding: "utf8" });
+    assert.equal(sensitive.status, 0, sensitive.stderr || sensitive.stdout);
+    const sensitiveJson = JSON.parse(sensitive.stdout);
+    assert.equal(sensitiveJson.selectedProfile.user, "work@example.test");
+    assert.ok(sensitiveJson.selectedProfile.extensionDir.includes("Profile 1"));
+  } finally {
+    rmSync(home, { recursive: true, force: true });
+  }
+});
+
+test("native-host readiness fails when extension-host binary is missing", () => {
+  const target = TARGETS["chrome-dev"];
+  const missingHost = "/definitely/missing/extension-host";
+  const actualManifest = manifestFor(target, { extensionHost: missingHost });
+  const status = nativeHostStatus(target, {
+    extensionHost: missingHost,
+    actualManifest,
+    manifestPath: path.join(path.sep, "tmp", "native-host.json")
+  });
+  assert.equal(status.manifestMatches, true);
+  assert.equal(status.matches, false);
+  assert.equal(status.ready, false);
+  assert.ok(status.reasons.includes("extension-host-missing"));
+});
+
+test("Linux real launch fails cleanly when browser executable is missing", () => {
+  assert.throws(
+    () => commandForTarget(TARGETS["chrome-dev"], { requireInstalled: true }, {
+      platform: "linux",
+      env: { PATH: "/missing" },
+      existsSync: () => false
+    }),
+    /Could not find Google Chrome Dev executable/
+  );
+
+  const dryRun = commandForTarget(TARGETS["chrome-dev"], { requireInstalled: false }, {
+    platform: "linux",
+    env: { PATH: "/missing" },
+    existsSync: () => false
+  });
+  assert.equal(dryRun.command, "google-chrome-unstable");
+});
+
+test("validation script runs without ripgrep and metadata has no placeholder URLs", () => {
+  const validation = spawnSync(process.execPath, ["scripts/validate-no-local-paths.mjs"], {
+    cwd: path.resolve(new URL("..", import.meta.url).pathname),
+    env: { ...process.env, PATH: "" },
+    encoding: "utf8"
+  });
+  assert.equal(validation.status, 0, validation.stderr || validation.stdout);
+
+  const metadata = readFileSync(path.resolve(new URL("..", import.meta.url).pathname, ".codex-plugin", "plugin.json"), "utf8");
+  assert.equal(metadata.includes("example.com"), false);
+});
+
 function mockAgent(backends) {
   const byId = new Map(backends.map((backend) => [backend.info.id, backend]));
   return {
@@ -322,6 +668,31 @@ function mockAgent(backends) {
         };
       }
     }
+  };
+}
+
+function tabFailingAgent(infos) {
+  return {
+    browsers: {
+      async list() {
+        return infos;
+      },
+      async get() {
+        throw new Error("openTabs should not be called");
+      }
+    }
+  };
+}
+
+function socketMappingOptions({ socketDir, socketNames, lsofRows, psRows }) {
+  return {
+    socketDir,
+    readdir: async () => socketNames,
+    execFile: async (command) => ({
+      stdout: command === "lsof"
+        ? ["COMMAND   PID USER FD TYPE DEVICE SIZE/OFF NODE NAME", ...lsofRows].join("\n")
+        : psRows.join("\n")
+    })
   };
 }
 

@@ -1,15 +1,22 @@
 #!/usr/bin/env node
 import { execFile } from "node:child_process";
-import { existsSync } from "node:fs";
-import path from "node:path";
 import { promisify } from "node:util";
 
 import { getTarget } from "../src/targets.mjs";
+import { commandForTarget } from "./lib/open-browser-command.mjs";
 
 const execFileAsync = promisify(execFile);
 
 function usage() {
   console.error("Usage: node scripts/open-browser.mjs --target <id> [--url <url>|--no-url] [--profile-directory <name>] [--background] [--dry-run] [--json]");
+}
+
+function readValue(argv, index, flag) {
+  const value = argv[index + 1];
+  if (value == null || value.startsWith("--")) {
+    throw new Error(`${flag} requires a value`);
+  }
+  return value;
 }
 
 function parseArgs(argv) {
@@ -23,10 +30,10 @@ function parseArgs(argv) {
   };
   for (let i = 0; i < argv.length; i += 1) {
     const arg = argv[i];
-    if (arg === "--target") args.target = argv[++i];
-    else if (arg === "--url") args.url = argv[++i];
+    if (arg === "--target") args.target = readValue(argv, i++, arg);
+    else if (arg === "--url") args.url = readValue(argv, i++, arg);
     else if (arg === "--no-url") args.url = null;
-    else if (arg === "--profile-directory") args.profileDirectory = argv[++i];
+    else if (arg === "--profile-directory") args.profileDirectory = readValue(argv, i++, arg);
     else if (arg === "--background") args.background = true;
     else if (arg === "--dry-run") args.dryRun = true;
     else if (arg === "--json") args.json = true;
@@ -48,65 +55,13 @@ function parseArgs(argv) {
   return args;
 }
 
-function commandFor(target, url, options = {}) {
-  if (process.platform === "darwin") {
-    const appPath = path.resolve("/Applications", target.macos.appName);
-    if (!existsSync(appPath)) {
-      throw new Error(`Could not find ${target.macos.appName}`);
-    }
-    const appName = target.macos.appName.replace(/\.app$/, "");
-    const browserArgs = options.profileDirectory
-      ? [`--profile-directory=${options.profileDirectory}`]
-      : [];
-    return {
-      command: "open",
-      args: [
-        options.background ? "-g" : null,
-        "-a",
-        appName,
-        url,
-        browserArgs.length > 0 ? "--args" : null,
-        ...browserArgs
-      ].filter((arg) => arg != null),
-      appName,
-      backgroundMode: options.background ? "minimize-new-windows" : null,
-      focusGuard: options.background ? "restore-frontmost-app" : null
-    };
-  }
-
-  if (process.platform === "win32") {
-    const browserArgs = [
-      options.profileDirectory ? `--profile-directory=${options.profileDirectory}` : null,
-      url
-    ].filter((arg) => arg != null);
-    if (options.background) {
-      return {
-        command: "powershell.exe",
-        args: [
-          "-NoProfile",
-          "-Command",
-          `Start-Process -FilePath ${quotePowerShell(target.windows.executable)} -ArgumentList ${quotePowerShell(browserArgs.join(" "))} -WindowStyle Minimized`
-        ],
-        backgroundMode: "minimized"
-      };
-    }
-    return { command: target.windows.executable, args: browserArgs };
-  }
-
-  return {
-    command: target.linux.commands[0],
-    args: [
-      options.profileDirectory ? `--profile-directory=${options.profileDirectory}` : null,
-      url
-    ].filter((arg) => arg != null)
-  };
-}
-
 const args = parseArgs(process.argv.slice(2));
 const target = getTarget(args.target);
-const command = commandFor(target, args.url, {
+const command = commandForTarget(target, {
   background: args.background,
-  profileDirectory: args.profileDirectory
+  profileDirectory: args.profileDirectory,
+  requireInstalled: !args.dryRun,
+  url: args.url
 });
 if (!args.dryRun) {
   await runCommand(command);
@@ -123,10 +78,6 @@ const result = {
 };
 if (args.json) console.log(JSON.stringify(result, null, 2));
 else console.log(`${command.command} ${command.args.join(" ")}`);
-
-function quotePowerShell(value) {
-  return `'${value.replace(/'/g, "''")}'`;
-}
 
 async function runCommand(command) {
   const useMacFocusGuard = process.platform === "darwin" && command.focusGuard === "restore-frontmost-app";

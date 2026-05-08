@@ -5,8 +5,6 @@
   "author": {
     "name": "Browser Control contributors"
   },
-  "homepage": "https://example.com/browser-control",
-  "repository": "https://example.com/browser-control",
   "license": "MIT",
   "keywords": [
     "browser",
@@ -18,14 +16,13 @@
   "interface": {
     "displayName": "Browser Control",
     "shortDescription": "Control Chrome and Edge channels with Codex",
-    "longDescription": "Browser Control adds setup, detection, native-host manifest management, and runtime routing guidance for Chrome and Microsoft Edge stable, beta, dev, and canary channels. Browser content may include sensitive information from logged-in sites.",
+    "longDescription": "Browser Control adds setup, detection, native-host manifest management, launch support, and runtime routing guidance for Chrome and Microsoft Edge stable, beta, dev, and canary channels. Process-based runtime identity is tab-free by default. Connected-backend observation is available on Unix-like platforms; Windows reports native-host and profile setup status but cannot currently prove a live Browser Use connection through Unix socket inspection.",
     "developerName": "Browser Control contributors",
     "category": "Productivity",
     "capabilities": [
       "Interactive",
       "Read"
     ],
-    "websiteURL": "https://example.com/browser-control",
     "privacyPolicyURL": "https://openai.com/policies/row-privacy-policy/",
     "termsOfServiceURL": "https://openai.com/policies/row-terms-of-use/",
     "defaultPrompt": [

@@ -7,22 +7,77 @@ export function readJson(filePath) {
   return JSON.parse(readFileSync(filePath, "utf8"));
 }
 
+export function tryReadJson(filePath) {
+  try {
+    return { ok: true, value: readJson(filePath) };
+  } catch (error) {
+    return {
+      ok: false,
+      error: {
+        kind: error instanceof SyntaxError ? "invalid-json" : "unreadable",
+        code: error.code,
+        message: error.message
+      }
+    };
+  }
+}
+
 export function browserProfileState(root) {
-  const localState = path.join(root, "Local State");
-  if (!existsSync(localState)) {
-    return { lastUsedProfile: null, profileInfo: {}, profilesOrder: [] };
+  const localStatePath = path.join(root, "Local State");
+  if (!existsSync(localStatePath)) {
+    return {
+      status: "missing",
+      localStatePath,
+      lastUsedProfile: null,
+      profileInfo: {},
+      profilesOrder: []
+    };
   }
 
-  const state = readJson(localState);
+  const readResult = tryReadJson(localStatePath);
+  if (!readResult.ok) {
+    return {
+      status: readResult.error.kind,
+      localStatePath,
+      lastUsedProfile: null,
+      profileInfo: {},
+      profilesOrder: [],
+      error: readResult.error
+    };
+  }
+
+  const state = readResult.value;
+  if (!isRecord(state)) {
+    return invalidProfileState(localStatePath, "Local State root is not an object");
+  }
+  const profile = isRecord(state.profile) ? state.profile : {};
   return {
-    lastUsedProfile: state.profile?.last_used ?? null,
-    profileInfo: state.profile?.info_cache ?? {},
-    profilesOrder: state.profile?.profiles_order ?? []
+    status: "ok",
+    localStatePath,
+    lastUsedProfile: typeof profile.last_used === "string" ? profile.last_used : null,
+    profileInfo: isRecord(profile.info_cache) ? profile.info_cache : {},
+    profilesOrder: Array.isArray(profile.profiles_order)
+      ? profile.profiles_order.filter((entry) => typeof entry === "string")
+      : []
   };
 }
 
-export function candidateProfiles(root) {
-  const state = browserProfileState(root);
+function invalidProfileState(localStatePath, message) {
+  return {
+    status: "invalid-json",
+    localStatePath,
+    lastUsedProfile: null,
+    profileInfo: {},
+    profilesOrder: [],
+    error: { kind: "invalid-json", message }
+  };
+}
+
+function isRecord(value) {
+  return value != null && typeof value === "object" && !Array.isArray(value);
+}
+
+export function candidateProfiles(root, state = browserProfileState(root)) {
   const candidates = [];
   if (state.lastUsedProfile) candidates.push(state.lastUsedProfile);
   for (const profile of state.profilesOrder) candidates.push(profile);
@@ -68,7 +123,7 @@ export function inspectProfile(root, profile, extensionId, profileInfo = {}) {
 export function inspectExtensionProfiles(target) {
   const root = profileRoot(target);
   const state = browserProfileState(root);
-  return candidateProfiles(root).map((profile) =>
+  return candidateProfiles(root, state).map((profile) =>
     inspectProfile(root, profile, target.extensionDiscovery.extensionId, state.profileInfo)
   );
 }
@@ -76,12 +131,16 @@ export function inspectExtensionProfiles(target) {
 export function selectExtensionProfile(target, options = {}) {
   const root = profileRoot(target);
   const state = browserProfileState(root);
-  const profiles = inspectExtensionProfiles(target);
+  const profiles = candidateProfiles(root, state).map((profile) =>
+    inspectProfile(root, profile, target.extensionDiscovery.extensionId, state.profileInfo)
+  );
 
   return chooseExtensionProfile({
     context: options.context,
     lastUsedProfile: state.lastUsedProfile,
     profileDirectory: options.profileDirectory,
+    profileStateError: state.error,
+    profileStateStatus: state.status,
     profiles,
     inspectRequestedProfile: (profileDirectory) =>
       inspectProfile(root, profileDirectory, target.extensionDiscovery.extensionId, state.profileInfo)
@@ -92,16 +151,23 @@ export function chooseExtensionProfile({
   context = null,
   lastUsedProfile,
   profileDirectory = null,
+  profileStateStatus = "ok",
+  profileStateError = null,
   profiles,
   inspectRequestedProfile
 }) {
   const installedProfiles = profiles.filter((profile) => profile.installed);
+  const withProfileState = (result) => ({
+    ...result,
+    profileStateStatus,
+    profileStateError: profileStateError ?? null
+  });
 
   if (profileDirectory) {
     const selectedProfile =
       profiles.find((profile) => profile.profileDirectory === profileDirectory) ??
       inspectRequestedProfile(profileDirectory);
-    return {
+    return withProfileState({
       status: selectedProfile.installed ? "selected" : "requested-profile-not-installed",
       reason: "explicit-profile",
       selectedProfile,
@@ -109,7 +175,7 @@ export function chooseExtensionProfile({
       lastUsedProfile,
       installedProfiles,
       profiles
-    };
+    });
   }
 
   const contextMatches = rankProfilesForContext(installedProfiles, context);
@@ -119,7 +185,7 @@ export function chooseExtensionProfile({
     contextWinner.score >= 3 &&
     (contextMatches[1]?.score ?? 0) < contextWinner.score
   ) {
-    return {
+    return withProfileState({
       status: "selected",
       reason: "context-match",
       selectedProfile: contextWinner.profile,
@@ -127,14 +193,14 @@ export function chooseExtensionProfile({
       lastUsedProfile,
       installedProfiles,
       profiles
-    };
+    });
   }
 
   const lastUsedInstalled = installedProfiles.find(
     (profile) => profile.profileDirectory === lastUsedProfile
   );
   if (lastUsedInstalled) {
-    return {
+    return withProfileState({
       status: "selected",
       reason: "last-used-profile",
       selectedProfile: lastUsedInstalled,
@@ -142,11 +208,11 @@ export function chooseExtensionProfile({
       lastUsedProfile,
       installedProfiles,
       profiles
-    };
+    });
   }
 
   if (installedProfiles.length === 1) {
-    return {
+    return withProfileState({
       status: "selected",
       reason: "only-installed-profile",
       selectedProfile: installedProfiles[0],
@@ -154,10 +220,10 @@ export function chooseExtensionProfile({
       lastUsedProfile,
       installedProfiles,
       profiles
-    };
+    });
   }
 
-  return {
+  return withProfileState({
     status: installedProfiles.length > 1 ? "ambiguous-profile" : "no-extension-installed",
     reason: installedProfiles.length > 1 ? "multiple-installed-profiles" : "extension-not-found",
     selectedProfile: null,
@@ -165,7 +231,7 @@ export function chooseExtensionProfile({
     lastUsedProfile,
     installedProfiles,
     profiles
-  };
+  });
 }
 
 export function rankProfilesForContext(profiles, context) {
@@ -246,6 +312,28 @@ export function profileMetadata(profileDirectory, info = {}) {
 
 export function profileDisplayLabel(metadata) {
   return [metadata.profileName, metadata.user].filter(Boolean).join(" - ");
+}
+
+export function publicProfile(profile, options = {}) {
+  if (!profile || options.includeSensitive) return profile ?? null;
+  return {
+    profileDirectory: profile.profileDirectory,
+    installed: profile.installed,
+    hasLocalExtensionSettings: profile.hasLocalExtensionSettings,
+    versions: profile.versions ?? []
+  };
+}
+
+export function publicContextMatches(matches = [], options = {}) {
+  return matches.map((match) => ({
+    score: match.score,
+    ...(options.includeSensitive ? {
+      matchedTerms: match.matchedTerms,
+      profile: publicProfile(match.profile, { includeSensitive: true })
+    } : {
+      profileDirectory: match.profile?.profileDirectory ?? null
+    })
+  }));
 }
 
 function cleanString(value) {

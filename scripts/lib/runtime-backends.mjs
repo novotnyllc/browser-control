@@ -4,13 +4,18 @@ import { platform } from "node:os";
 import { join, sep } from "node:path";
 import { promisify } from "node:util";
 
-import { getTarget, TARGETS } from "../../src/targets.mjs";
+import { getTarget } from "../../src/targets.mjs";
+import { targetFromBrowserProcessArgs } from "./browser-detection.mjs";
 
 const execFileAsync = promisify(execFile);
 const BROWSER_USE_SOCKET_DIR_NAME = "codex-browser-use";
 
+export async function listExtensionBackends(agentLike) {
+  return (await agentLike.browsers.list()).filter((info) => info.type === "extension");
+}
+
 export async function snapshotExtensionBackends(agentLike) {
-  const infos = (await agentLike.browsers.list()).filter((info) => info.type === "extension");
+  const infos = await listExtensionBackends(agentLike);
   const snapshots = [];
   for (const info of infos) {
     const browser = await agentLike.browsers.get(info.id);
@@ -23,29 +28,37 @@ export async function snapshotExtensionBackends(agentLike) {
 }
 
 export async function enrichBackendsFromProcesses(agentLike, options = {}) {
-  const snapshots = await snapshotExtensionBackends(agentLike);
+  const infos = await listExtensionBackends(agentLike);
   const mappings = await extensionHostSocketMappings(options);
 
-  if (snapshots.length !== mappings.length) {
-    return snapshots.map((snapshot) => unresolved(snapshot, "process-socket-count-mismatch", {
-      extensionBackendCount: snapshots.length,
-      extensionHostSocketCount: mappings.length
-    }));
-  }
-
-  return snapshots.map((snapshot, index) => {
-    const mapping = mappings[index];
-    if (!mapping?.target) {
-      return unresolved(snapshot, "unmatched-extension-host-process", {
-        extensionHostPid: mapping?.extensionHostPid,
-        parentPid: mapping?.parentPid
+  return infos.map((info) => {
+    const match = deterministicProcessMapping(info, infos, mappings);
+    if (!match.mapping) {
+      return unresolved({ info }, match.reason, {
+        extensionBackendCount: infos.length,
+        extensionHostSocketCount: mappings.length,
+        mappedTargets: mappings.map((mapping) => ({
+          extensionHostPid: mapping.extensionHostPid,
+          parentPid: mapping.parentPid,
+          targetId: mapping.target?.id ?? null
+        })),
+        ...(match.pid ? { extensionHostPid: match.pid } : {})
       });
     }
+
+    const mapping = match.mapping;
+    if (!mapping.target) {
+      return unresolved({ info }, "unmatched-extension-host-process", {
+        extensionHostPid: mapping.extensionHostPid,
+        parentPid: mapping.parentPid
+      });
+    }
+
     return {
-      ...snapshot,
+      info,
       backend: {
-        ...snapshot.info,
-        reportedName: snapshot.info.name,
+        ...info,
+        reportedName: info.name,
         name: mapping.target.displayName,
         targetId: mapping.target.id,
         family: mapping.target.family,
@@ -71,7 +84,8 @@ export async function enrichBackendsFromExistingTabs(agentLike, targetInventorie
 }
 
 export async function extensionHostSocketMappings(options = {}) {
-  if (platform() === "win32") return [];
+  const currentPlatform = options.platform ?? platform();
+  if (currentPlatform === "win32") return [];
 
   const socketDir = options.socketDir ?? browserUseSocketDir();
   const readDir = options.readdir ?? readdir;
@@ -94,7 +108,8 @@ export async function extensionHostSocketMappings(options = {}) {
     socketDir,
     socketNames,
     lsofOutput: lsofResult.stdout,
-    psOutput: psResult.stdout
+    psOutput: psResult.stdout,
+    platform: currentPlatform
   });
 }
 
@@ -102,7 +117,7 @@ export function browserUseSocketDir() {
   return join(sep, "tmp", BROWSER_USE_SOCKET_DIR_NAME);
 }
 
-export function mapExtensionHostSockets({ socketDir, socketNames, lsofOutput, psOutput }) {
+export function mapExtensionHostSockets({ socketDir, socketNames, lsofOutput, psOutput, platform: processPlatform = platform() }) {
   const liveSockets = parseLsofUnixSockets(lsofOutput, socketDir);
   const processes = parsePsProcesses(psOutput);
   const socketsByPath = new Map(liveSockets.map((socket) => [socket.path, socket]));
@@ -114,7 +129,7 @@ export function mapExtensionHostSockets({ socketDir, socketNames, lsofOutput, ps
       const socket = socketsByPath.get(socketPath);
       const extensionHost = processes.get(socket.pid);
       const parent = extensionHost ? processes.get(extensionHost.ppid) : null;
-      const target = parent ? targetFromBrowserProcessArgs(parent.args) : null;
+      const target = parent ? targetFromBrowserProcessArgs(parent.args, { platform: processPlatform }) : null;
       return {
         socketPath,
         extensionHostPid: socket.pid,
@@ -161,21 +176,6 @@ export function parsePsProcesses(output) {
   return processes;
 }
 
-export function targetFromBrowserProcessArgs(args) {
-  for (const target of Object.values(TARGETS)) {
-    if (platform() === "darwin" && args.includes(`${target.macos.appName}/Contents/MacOS`)) {
-      return target;
-    }
-    if (platform() === "linux" && target.linux.commands.some((command) => args.includes(command))) {
-      return target;
-    }
-    if (platform() === "win32" && args.toLowerCase().includes(target.windows.executable.toLowerCase())) {
-      return target;
-    }
-  }
-  return null;
-}
-
 export function enrichSnapshot(snapshot, targetInventories) {
   const scores = Object.entries(targetInventories).map(([targetId, inventory]) => ({
     target: getTarget(targetId),
@@ -207,6 +207,31 @@ export function enrichSnapshot(snapshot, targetInventories) {
     resolved: true,
     matchCount: winner.matches
   };
+}
+
+function deterministicProcessMapping(info, infos, mappings) {
+  if (mappings.length === 0) return { mapping: null, reason: "no-extension-host-sockets" };
+
+  const pid = backendExtensionHostPid(info);
+  if (pid != null) {
+    const pidMatches = mappings.filter((mapping) => mapping.extensionHostPid === pid);
+    if (pidMatches.length === 1) return { mapping: pidMatches[0], pid };
+    return { mapping: null, reason: "process-socket-association-unavailable", pid };
+  }
+
+  if (infos.length === 1 && mappings.length === 1) return { mapping: mappings[0] };
+  return { mapping: null, reason: "process-socket-association-unavailable" };
+}
+
+function backendExtensionHostPid(info) {
+  const candidates = [
+    info.extensionHostPid,
+    info.nativeHostPid,
+    info.process?.extensionHostPid,
+    info.process?.pid,
+    info.pid
+  ];
+  return candidates.find((candidate) => Number.isInteger(candidate)) ?? null;
 }
 
 function countUrlOverlap(backendTabs, inventoryTabs) {

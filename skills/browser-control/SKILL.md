@@ -28,13 +28,13 @@ Use `scripts/detect-browser.mjs`, `scripts/check-extension.mjs`, and `scripts/na
 
 Target resolution flow:
 
-1. Gather existing Browser Use extension backends with `snapshotExtensionBackends(agent)`.
-2. Call `enrichBackendsFromProcesses(agent)` to map each backend to the extension-host process, then to the parent browser process and target channel.
-3. Use enriched labels only when `resolved === true`.
-4. If process resolution is unavailable or count-mismatched, optionally call `enrichBackendsFromExistingTabs(agent, targetInventories)` when existing read-only tab state is already enough.
-5. If the result is unresolved or ambiguous, report the Browser Use backend id and the intended target setup state; do not create, navigate, claim, or close tabs just to detect identity.
+1. Gather existing Browser Use extension backends with `listExtensionBackends(agent)` or call `enrichBackendsFromProcesses(agent)` directly; this path is tab-free by default and must not call `openTabs()`.
+2. `enrichBackendsFromProcesses(agent)` maps a backend only when a deterministic extension-host/native-host PID association or singleton process/socket association exists.
+3. Use enriched labels only when `resolved === true`; unresolved or ambiguous results are safer than guessing by array order.
+4. If process resolution is unavailable, optionally call `enrichBackendsFromExistingTabs(agent, targetInventories)` only when existing read-only tab state is already intentionally available for the task.
+5. If the result is unresolved or ambiguous, report the Browser Use backend id and the intended target setup state; do not create, navigate, claim, inspect, or close tabs just to detect identity.
 
-Use `scripts/connection-status.mjs --target <target> --json` before claiming an existing profile is connected. If it reports `existing-profile-not-connected`, the extension and native-host manifest may be installed correctly but the target browser's existing profile has not started the native host yet. In that state, do not substitute an isolated proof profile for real user-profile automation.
+Use `scripts/connection-status.mjs --target <target> --json` before claiming an existing profile is connected. If it reports `existing-profile-not-connected`, the extension and native-host manifest may be installed correctly but the target browser's existing profile has not started the native host yet. On Windows it can report `connection-observation-unsupported`; treat that as setup/status only, not proof of a live Browser Use connection. In either state, do not substitute an isolated proof profile for real user-profile automation.
 
 When the user does not name a browser/channel, use `scripts/select-browser.mjs --json` to infer it. If task context names an account, domain, org, or profile label, pass that text with `--profile-context`. Selection order is explicit target, clear context/account match, connected browser, frontmost browser, running browser with most recent selected-profile activity, then installed browser with most recent selected-profile activity.
 
@@ -43,7 +43,8 @@ When the user does not name a browser/channel, use `scripts/select-browser.mjs -
 From the plugin root:
 
 ```sh
-node scripts/check-bundled-runtime.mjs --json
+npm run validate
+npm run validate:runtime  # optional local check when the bundled Browser Use runtime exists
 node scripts/browser-targets.mjs --json
 node scripts/detect-browser.mjs --target chrome-dev --json
 node scripts/check-extension.mjs --target chrome-dev --json
@@ -56,7 +57,9 @@ Use `scripts/native-host.mjs --target <target> --install` only when native-host 
 
 If extension detection fails, tell the user to confirm that the [Codex Chrome Extension](https://chromewebstore.google.com/detail/hehggadaopoacecdllhhajmbjkdcmajg) is installed and enabled in the selected browser profile. The same extension is used for supported Chrome and Microsoft Edge channels.
 
-Use `scripts/open-browser.mjs --target <target> --dry-run --json` to verify the launch command without opening a browser. Add `--background` when opening is necessary and should avoid taking focus. On macOS this uses `open -g`, minimizes newly-created target-browser windows, and reactivates the previously-frontmost app; on Windows this uses a minimized `Start-Process` command. For existing-profile wake checks, use `--no-url --profile-directory <profile>` so the browser is nudged without creating a tab.
+Use `scripts/open-browser.mjs --target <target> --dry-run --json` to verify the launch command without opening a browser. Add `--background` when opening is necessary and should avoid taking focus. On macOS this uses `open -g`, minimizes newly-created target-browser windows, and reactivates the previously-frontmost app; on Windows this resolves the channel-specific executable path and uses a minimized `Start-Process` command with separate browser arguments. For existing-profile wake checks, use `--no-url --profile-directory <profile>` so the browser is nudged without creating a tab.
+
+Use `scripts/runtime-proof.mjs --target <target> --json` only inside the trusted Browser Use runtime context. By default it does not inspect tabs and prints no titles or URLs. Add `--include-tabs` only when a count-only tab check is explicitly needed.
 
 ## Safety
 

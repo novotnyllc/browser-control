@@ -1,10 +1,8 @@
-import { execFile, execFileSync } from "node:child_process";
-import { existsSync } from "node:fs";
-import path from "node:path";
+import { execFile } from "node:child_process";
 import { promisify } from "node:util";
 
 import { TARGETS, targetIds } from "../../src/targets.mjs";
-import { profileRoot } from "./paths.mjs";
+import { browserInstallationStatus, browserRunningStatus } from "./browser-detection.mjs";
 import { extensionHostSocketMappings } from "./runtime-backends.mjs";
 import { selectExtensionProfile } from "./profiles.mjs";
 
@@ -24,6 +22,8 @@ export async function inspectBrowserTargets(options = {}) {
 
   return targetIds().map((targetId) => {
     const target = TARGETS[targetId];
+    const installStatus = browserInstallationStatus(target);
+    const runningStatus = browserRunningStatus(target);
     const profileSelection = selectExtensionProfile(target, {
       context: options.context
     });
@@ -32,8 +32,10 @@ export async function inspectBrowserTargets(options = {}) {
       target,
       displayName: target.displayName,
       targetId,
-      installed: browserInstalled(target),
-      running: browserRunning(target),
+      installed: installStatus.installed,
+      installStatus,
+      running: runningStatus.running,
+      runningStatus,
       connected: connectedTargetIds.has(targetId),
       frontmost: frontmostBundleId != null && target.macos.bundleId === frontmostBundleId,
       profileSelection,
@@ -108,33 +110,6 @@ function candidateContextScore(candidate) {
 
 function candidateActivityTime(candidate) {
   return candidate.selectedProfileActiveTime ?? 0;
-}
-
-function browserInstalled(target) {
-  if (process.platform === "darwin") {
-    return existsSync(path.resolve("/Applications", target.macos.appName));
-  }
-  return existsSync(profileRoot(target));
-}
-
-function browserRunning(target) {
-  if (process.platform === "win32") {
-    const output = execFileSync(
-      "tasklist",
-      ["/fo", "csv", "/nh", "/fi", `imagename eq ${target.windows.executable}`],
-      { encoding: "utf8" }
-    );
-    return target.windows.processNames.some((name) =>
-      output.toLowerCase().includes(name.toLowerCase())
-    );
-  }
-
-  const output = execFileSync("ps", ["-axo", "comm,args"], { encoding: "utf8" });
-  const patterns =
-    process.platform === "darwin"
-      ? target.macos.processNames
-      : target.linux.processNames;
-  return patterns.some((pattern) => output.includes(pattern));
 }
 
 async function currentFrontmostBundleId() {

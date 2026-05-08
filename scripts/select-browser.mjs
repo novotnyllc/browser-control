@@ -1,16 +1,18 @@
 #!/usr/bin/env node
 import { selectBrowserTarget } from "./lib/browser-selection.mjs";
+import { publicProfile } from "./lib/profiles.mjs";
 
 function usage() {
   console.error("Usage: node scripts/select-browser.mjs [--profile-context <text>] [--json]");
 }
 
 function parseArgs(argv) {
-  const args = { context: null, json: false };
+  const args = { context: null, includeSensitive: false, json: false };
   for (let i = 0; i < argv.length; i += 1) {
     const arg = argv[i];
     if (arg === "--profile-context") args.context = argv[++i];
     else if (arg === "--json") args.json = true;
+    else if (arg === "--include-sensitive") args.includeSensitive = true;
     else {
       usage();
       process.exit(2);
@@ -35,7 +37,7 @@ const result = {
         running: selected.running,
         connected: selected.connected,
         frontmost: selected.frontmost,
-        profile: selected.selectedProfile
+        profile: publicProfile(selected.selectedProfile, { includeSensitive: args.includeSensitive })
       }
     : null,
   candidates: selection.candidates.map((candidate) => ({
@@ -43,29 +45,25 @@ const result = {
     displayName: candidate.displayName,
     installed: candidate.installed,
     running: candidate.running,
+    installStatus: candidate.installStatus,
+    runningStatus: candidate.runningStatus,
     connected: candidate.connected,
     frontmost: candidate.frontmost,
     profileSelectionStatus: candidate.profileSelection.status,
     profileSelectionReason: candidate.profileSelection.reason,
-    selectedProfile: candidate.selectedProfile
-      ? {
-          displayLabel: candidate.selectedProfile.displayLabel,
-          profileDirectory: candidate.selectedProfile.profileDirectory,
-          activeTime: candidate.selectedProfile.activeTime
-        }
-      : null,
-    installedProfiles: candidate.profileSelection.installedProfiles.map((profile) => ({
-      displayLabel: profile.displayLabel,
-      profileDirectory: profile.profileDirectory,
-      activeTime: profile.activeTime
-    }))
+    profileStateStatus: candidate.profileSelection.profileStateStatus,
+    profileStateError: candidate.profileSelection.profileStateError,
+    selectedProfile: publicProfile(candidate.selectedProfile, { includeSensitive: args.includeSensitive }),
+    installedProfiles: candidate.profileSelection.installedProfiles.map((profile) =>
+      publicProfile(profile, { includeSensitive: args.includeSensitive })
+    )
   }))
 };
 
 if (args.json) {
   console.log(JSON.stringify(result, null, 2));
 } else if (selected) {
-  console.log(`${selected.displayName}: ${selected.selectedProfile.displayLabel}`);
+  console.log(`${selected.displayName}: ${selected.selectedProfile.profileDirectory}`);
   console.log(`reason: ${selection.reason}`);
 } else {
   console.log(`browser selection: ${selection.status}`);
