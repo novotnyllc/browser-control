@@ -5,7 +5,7 @@
 <h1 align="center">Browser Control</h1>
 
 <p align="center">
-  Helping Codex's new Chrome plugin work across the browsers and channels.
+  Helping Codex's new Chrome plugin work across browsers and channels.
 </p>
 
 <p align="center">
