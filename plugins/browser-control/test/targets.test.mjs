@@ -56,6 +56,40 @@ test("defines every required browser target", () => {
   ]);
 });
 
+test("skill advertises README-supported natural language browser targets", () => {
+  const pluginRoot = path.resolve(new URL("..", import.meta.url).pathname);
+  const marketplaceRoot = path.resolve(pluginRoot, "../..");
+  const readme = readFileSync(path.join(marketplaceRoot, "README.md"), "utf8");
+  const skill = readFileSync(path.join(pluginRoot, "skills", "browser-control", "SKILL.md"), "utf8");
+  const frontmatter = skill.match(/^---\n(?<body>[\s\S]*?)\n---/)?.groups?.body ?? "";
+
+  assert.match(frontmatter, /^name: browser-control$/m);
+  assert.match(frontmatter, /^description: ".*Use when /m);
+
+  assert.match(readme, /Google Chrome\s*\|\s*Stable, Beta, Dev, Canary/);
+  assert.match(readme, /Microsoft Edge\s*\|\s*Stable, Beta, Dev, Canary/);
+
+  const naturalAliases = {
+    "chrome-stable": ["Google Chrome", "Chrome Stable"],
+    "chrome-beta": ["Google Chrome Beta", "Chrome Beta"],
+    "chrome-dev": ["Google Chrome Dev", "Chrome Dev"],
+    "chrome-canary": ["Google Chrome Canary", "Chrome Canary"],
+    "edge-stable": ["Microsoft Edge", "Edge Stable"],
+    "edge-beta": ["Microsoft Edge Beta", "Edge Beta"],
+    "edge-dev": ["Microsoft Edge Dev", "Edge Dev"],
+    "edge-canary": ["Microsoft Edge Canary", "Edge Canary"]
+  };
+
+  for (const id of targetIds()) {
+    const target = getTarget(id);
+    assert.ok(skill.includes(`\`${id}\``), `skill does not list target ${id}`);
+    assert.ok(skill.includes(target.mention), `skill does not list mention ${target.mention}`);
+    for (const alias of naturalAliases[id]) {
+      assert.ok(skill.includes(alias), `skill does not list natural-language alias ${alias}`);
+    }
+  }
+});
+
 test("target metadata contains required platform details", () => {
   for (const id of targetIds()) {
     const target = getTarget(id);
@@ -357,6 +391,25 @@ test("browser selection uses context match before running activity defaults", ()
 
   assert.equal(selection.reason, "context-match");
   assert.equal(selection.selected.targetId, "edge-dev");
+});
+
+test("browser selection follows README inference order after context", () => {
+  const connectedSelection = chooseBrowserTarget([
+    browserCandidate({ id: "chrome-dev", connected: true, activeTime: 100 }),
+    browserCandidate({ id: "edge-dev", frontmost: true, activeTime: 900 }),
+    browserCandidate({ id: "chrome-canary", running: true, activeTime: 1000 })
+  ]);
+
+  assert.equal(connectedSelection.reason, "connected-browser");
+  assert.equal(connectedSelection.selected.targetId, "chrome-dev");
+
+  const frontmostSelection = chooseBrowserTarget([
+    browserCandidate({ id: "edge-dev", frontmost: true, activeTime: 100 }),
+    browserCandidate({ id: "chrome-canary", running: true, activeTime: 1000 })
+  ]);
+
+  assert.equal(frontmostSelection.reason, "frontmost-browser");
+  assert.equal(frontmostSelection.selected.targetId, "edge-dev");
 });
 
 test("browser selection defaults to running browser with most recent selected profile activity", () => {

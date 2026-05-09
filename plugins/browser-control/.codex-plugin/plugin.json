@@ -1,6 +1,6 @@
 {
   "name": "browser-control",
-  "version": "0.1.1",
+  "version": "0.1.2",
   "description": "Browser automation setup and routing support for Chrome and Microsoft Edge stable, beta, dev, and canary channels.",
   "author": {
     "name": "Browser Control contributors"

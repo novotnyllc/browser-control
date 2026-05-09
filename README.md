@@ -9,7 +9,7 @@
 </p>
 
 <p align="center">
-  <img alt="Version" src="https://img.shields.io/badge/version-0.1.1-blue">
+  <img alt="Version" src="https://img.shields.io/badge/version-0.1.2-blue">
   <img alt="License" src="https://img.shields.io/badge/license-MIT-green">
   <img alt="Codex plugin" src="https://img.shields.io/badge/Codex-plugin-black">
 </p>

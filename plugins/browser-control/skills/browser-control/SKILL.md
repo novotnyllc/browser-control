@@ -1,6 +1,6 @@
 ---
-name: Browser Control
-description: "Browser automation setup and routing for Chrome and Microsoft Edge stable, beta, dev, and canary. Use when the user mentions @browser-control, @chrome-stable, @chrome-beta, @chrome-dev, @chrome-canary, @edge-stable, @edge-beta, @edge-dev, or @edge-canary."
+name: browser-control
+description: "Browser automation setup and routing for Chrome and Microsoft Edge stable, beta, dev, and canary. Use when the user mentions @browser-control, @chrome-* or @edge-*, or asks for Chrome Dev, Chrome Canary, Edge Dev, or Edge Canary."
 ---
 
 # Browser Control
@@ -28,14 +28,16 @@ When finishing, answer with the user-visible result first. Mention browser or se
 
 Supported targets:
 
-- `chrome-stable`
-- `chrome-beta`
-- `chrome-dev`
-- `chrome-canary`
-- `edge-stable`
-- `edge-beta`
-- `edge-dev`
-- `edge-canary`
+- Google Chrome / Chrome Stable: `chrome-stable`, `@chrome-stable`
+- Google Chrome Beta / Chrome Beta: `chrome-beta`, `@chrome-beta`
+- Google Chrome Dev / Chrome Dev: `chrome-dev`, `@chrome-dev`
+- Google Chrome Canary / Chrome Canary: `chrome-canary`, `@chrome-canary`
+- Microsoft Edge / Edge Stable: `edge-stable`, `@edge-stable`
+- Microsoft Edge Beta / Edge Beta: `edge-beta`, `@edge-beta`
+- Microsoft Edge Dev / Edge Dev: `edge-dev`, `@edge-dev`
+- Microsoft Edge Canary / Edge Canary: `edge-canary`, `@edge-canary`
+
+Treat natural-language requests like "open it in Edge Dev", "use Chrome Dev", "open the beta site in Chrome Canary", or "use my Edge work profile" as Browser Control tasks. If no target is explicit, infer the target with `scripts/select-browser.mjs --json` using the selection order below.
 
 ## Runtime
 
