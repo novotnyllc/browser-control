@@ -5,7 +5,7 @@
 <h1 align="center">Browser Control</h1>
 
 <p align="center">
-  Helping Codex's new Chrome plugin work across the browsers and channels people actually use.
+  Helping Codex's new Chrome plugin work across the browsers and channels.
 </p>
 
 <p align="center">
@@ -20,7 +20,7 @@ Codex's new Chrome plugin currently only supports Chrome Stable. Browser Control
 
 ## What It Adds
 
-Browser Control teaches Codex about the browser channels that matter:
+Browser Control teaches Codex about the browsers and channels:
 
 | Browser family | Supported channels |
 |---|---|
