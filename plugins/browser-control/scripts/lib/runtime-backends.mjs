@@ -99,6 +99,17 @@ export async function extensionHostSocketMappings(options = {}) {
     throw error;
   }
 
+  if (Array.isArray(options.processTreeSnapshot)) {
+    const lsofResult = await run("lsof", ["-nU"]);
+    return mapExtensionHostSockets({
+      socketDir,
+      socketNames,
+      lsofOutput: lsofResult.stdout,
+      processes: processMapFromSnapshot(options.processTreeSnapshot),
+      platform: currentPlatform
+    });
+  }
+
   const [lsofResult, psResult] = await Promise.all([
     run("lsof", ["-nU"]),
     run("ps", ["-axo", "pid=,ppid=,args="])
@@ -117,9 +128,9 @@ export function browserUseSocketDir() {
   return join(sep, "tmp", BROWSER_USE_SOCKET_DIR_NAME);
 }
 
-export function mapExtensionHostSockets({ socketDir, socketNames, lsofOutput, psOutput, platform: processPlatform = platform() }) {
+export function mapExtensionHostSockets({ socketDir, socketNames, lsofOutput, psOutput, processes: suppliedProcesses = null, platform: processPlatform = platform() }) {
   const liveSockets = parseLsofUnixSockets(lsofOutput, socketDir);
-  const processes = parsePsProcesses(psOutput);
+  const processes = suppliedProcesses ?? parsePsProcesses(psOutput);
   const socketsByPath = new Map(liveSockets.map((socket) => [socket.path, socket]));
 
   return socketNames
@@ -171,6 +182,21 @@ export function parsePsProcesses(output) {
       pid: Number(pid),
       ppid: Number(ppid),
       args
+    });
+  }
+  return processes;
+}
+
+export function processMapFromSnapshot(processTreeSnapshot) {
+  const processes = new Map();
+  for (const entry of processTreeSnapshot) {
+    const pid = Number(entry?.pid);
+    const ppid = Number(entry?.ppid);
+    if (!Number.isInteger(pid)) continue;
+    processes.set(pid, {
+      pid,
+      ppid: Number.isInteger(ppid) ? ppid : null,
+      args: entry.commandLine ?? entry.args ?? entry.executablePath ?? ""
     });
   }
   return processes;

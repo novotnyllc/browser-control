@@ -8,6 +8,7 @@
     "test": "npm --prefix plugins/browser-control test",
     "check:syntax": "npm --prefix plugins/browser-control run check:syntax",
     "check:runtime": "npm --prefix plugins/browser-control run check:runtime",
+    "benchmark:first-tab": "npm --prefix plugins/browser-control run benchmark:first-tab --",
     "validate:paths": "npm --prefix plugins/browser-control run validate:paths",
     "validate": "npm --prefix plugins/browser-control run validate",
     "validate:runtime": "npm --prefix plugins/browser-control run validate:runtime"

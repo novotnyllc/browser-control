@@ -8,6 +8,7 @@
     "test": "node --test",
     "check:syntax": "node scripts/check-syntax.mjs",
     "check:runtime": "node scripts/check-bundled-runtime.mjs --json",
+    "benchmark:first-tab": "node scripts/benchmark-first-tab-latency.mjs",
     "validate:paths": "node scripts/validate-no-local-paths.mjs",
     "validate": "npm run check:syntax && npm test && npm run validate:paths",
     "validate:runtime": "npm run check:runtime"

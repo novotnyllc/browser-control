@@ -1,0 +1,694 @@
+{
+  "schemaVersion": 1,
+  "runId": "first-tab-2026-05-08T23-08-38-694Z",
+  "timestamp": "2026-05-08T23:08:38.694Z",
+  "platform": "darwin",
+  "arch": "arm64",
+  "nodeVersion": "v25.9.0",
+  "target": {
+    "id": "edge-dev",
+    "displayName": "Microsoft Edge Dev"
+  },
+  "profileDirectory": "Default",
+  "profileContextProvided": false,
+  "runtimeAvailable": true,
+  "wakeRequested": false,
+  "timeoutMs": 10000,
+  "pollMs": 100,
+  "samples": [
+    {
+      "caseName": "process-snapshot",
+      "iteration": 0,
+      "warmup": true,
+      "status": "ok",
+      "reason": null,
+      "skippedReason": null,
+      "timingsMs": {
+        "total": 84.478
+      },
+      "correctness": {
+        "selectedTarget": null,
+        "selectedProfileDirectory": null,
+        "processCount": 1370
+      }
+    },
+    {
+      "caseName": "select-browser",
+      "iteration": 0,
+      "warmup": true,
+      "status": "ok",
+      "reason": "connected-browser",
+      "skippedReason": null,
+      "timingsMs": {
+        "total": 407.648
+      },
+      "correctness": {
+        "selectedTarget": "edge-dev",
+        "selectedProfileDirectory": "Default",
+        "candidateCount": 8
+      }
+    },
+    {
+      "caseName": "connection-status",
+      "iteration": 0,
+      "warmup": true,
+      "status": "ok",
+      "reason": null,
+      "skippedReason": null,
+      "timingsMs": {
+        "total": 162.806
+      },
+      "correctness": {
+        "selectedTarget": "edge-dev",
+        "selectedProfileDirectory": "Default",
+        "connected": true,
+        "connectedMappingCount": 1,
+        "status": "connected",
+        "profileSelectionStatus": "selected",
+        "nativeHostReady": true
+      }
+    },
+    {
+      "caseName": "connection-readiness",
+      "iteration": 0,
+      "warmup": true,
+      "status": "ok",
+      "reason": null,
+      "skippedReason": null,
+      "timingsMs": {
+        "connectionStatus": 155.482,
+        "total": 155.555
+      },
+      "correctness": {
+        "selectedTarget": "edge-dev",
+        "selectedProfileDirectory": "Default",
+        "connected": true,
+        "connectedMappingCount": 1,
+        "status": "connected",
+        "profileSelectionStatus": "selected",
+        "nativeHostReady": true
+      }
+    },
+    {
+      "caseName": "runtime-proof",
+      "iteration": 0,
+      "warmup": true,
+      "status": "skipped",
+      "reason": null,
+      "skippedReason": "trusted-runtime-agent-unavailable-outside-node-repl",
+      "timingsMs": {
+        "total": 0.111
+      },
+      "correctness": {
+        "selectedTarget": null,
+        "selectedProfileDirectory": null
+      }
+    },
+    {
+      "caseName": "runtime-tab-create",
+      "iteration": 0,
+      "warmup": true,
+      "status": "skipped",
+      "reason": null,
+      "skippedReason": "trusted-runtime-agent-unavailable-outside-node-repl",
+      "timingsMs": {
+        "total": 0.042
+      },
+      "correctness": {
+        "selectedTarget": null,
+        "selectedProfileDirectory": null
+      }
+    },
+    {
+      "caseName": "process-snapshot",
+      "iteration": 1,
+      "warmup": false,
+      "status": "ok",
+      "reason": null,
+      "skippedReason": null,
+      "timingsMs": {
+        "total": 90.453
+      },
+      "correctness": {
+        "selectedTarget": null,
+        "selectedProfileDirectory": null,
+        "processCount": 1370
+      }
+    },
+    {
+      "caseName": "select-browser",
+      "iteration": 1,
+      "warmup": false,
+      "status": "ok",
+      "reason": "connected-browser",
+      "skippedReason": null,
+      "timingsMs": {
+        "total": 394.558
+      },
+      "correctness": {
+        "selectedTarget": "edge-dev",
+        "selectedProfileDirectory": "Default",
+        "candidateCount": 8
+      }
+    },
+    {
+      "caseName": "connection-status",
+      "iteration": 1,
+      "warmup": false,
+      "status": "ok",
+      "reason": null,
+      "skippedReason": null,
+      "timingsMs": {
+        "total": 163.197
+      },
+      "correctness": {
+        "selectedTarget": "edge-dev",
+        "selectedProfileDirectory": "Default",
+        "connected": true,
+        "connectedMappingCount": 1,
+        "status": "connected",
+        "profileSelectionStatus": "selected",
+        "nativeHostReady": true
+      }
+    },
+    {
+      "caseName": "connection-readiness",
+      "iteration": 1,
+      "warmup": false,
+      "status": "ok",
+      "reason": null,
+      "skippedReason": null,
+      "timingsMs": {
+        "connectionStatus": 154.622,
+        "total": 154.633
+      },
+      "correctness": {
+        "selectedTarget": "edge-dev",
+        "selectedProfileDirectory": "Default",
+        "connected": true,
+        "connectedMappingCount": 1,
+        "status": "connected",
+        "profileSelectionStatus": "selected",
+        "nativeHostReady": true
+      }
+    },
+    {
+      "caseName": "runtime-proof",
+      "iteration": 1,
+      "warmup": false,
+      "status": "skipped",
+      "reason": null,
+      "skippedReason": "trusted-runtime-agent-unavailable-outside-node-repl",
+      "timingsMs": {
+        "total": 0.007
+      },
+      "correctness": {
+        "selectedTarget": null,
+        "selectedProfileDirectory": null
+      }
+    },
+    {
+      "caseName": "runtime-tab-create",
+      "iteration": 1,
+      "warmup": false,
+      "status": "skipped",
+      "reason": null,
+      "skippedReason": "trusted-runtime-agent-unavailable-outside-node-repl",
+      "timingsMs": {
+        "total": 0.003
+      },
+      "correctness": {
+        "selectedTarget": null,
+        "selectedProfileDirectory": null
+      }
+    },
+    {
+      "caseName": "process-snapshot",
+      "iteration": 2,
+      "warmup": false,
+      "status": "ok",
+      "reason": null,
+      "skippedReason": null,
+      "timingsMs": {
+        "total": 95.997
+      },
+      "correctness": {
+        "selectedTarget": null,
+        "selectedProfileDirectory": null,
+        "processCount": 1370
+      }
+    },
+    {
+      "caseName": "select-browser",
+      "iteration": 2,
+      "warmup": false,
+      "status": "ok",
+      "reason": "connected-browser",
+      "skippedReason": null,
+      "timingsMs": {
+        "total": 443.965
+      },
+      "correctness": {
+        "selectedTarget": "edge-dev",
+        "selectedProfileDirectory": "Default",
+        "candidateCount": 8
+      }
+    },
+    {
+      "caseName": "connection-status",
+      "iteration": 2,
+      "warmup": false,
+      "status": "ok",
+      "reason": null,
+      "skippedReason": null,
+      "timingsMs": {
+        "total": 169.214
+      },
+      "correctness": {
+        "selectedTarget": "edge-dev",
+        "selectedProfileDirectory": "Default",
+        "connected": true,
+        "connectedMappingCount": 1,
+        "status": "connected",
+        "profileSelectionStatus": "selected",
+        "nativeHostReady": true
+      }
+    },
+    {
+      "caseName": "connection-readiness",
+      "iteration": 2,
+      "warmup": false,
+      "status": "ok",
+      "reason": null,
+      "skippedReason": null,
+      "timingsMs": {
+        "connectionStatus": 166.505,
+        "total": 166.513
+      },
+      "correctness": {
+        "selectedTarget": "edge-dev",
+        "selectedProfileDirectory": "Default",
+        "connected": true,
+        "connectedMappingCount": 1,
+        "status": "connected",
+        "profileSelectionStatus": "selected",
+        "nativeHostReady": true
+      }
+    },
+    {
+      "caseName": "runtime-proof",
+      "iteration": 2,
+      "warmup": false,
+      "status": "skipped",
+      "reason": null,
+      "skippedReason": "trusted-runtime-agent-unavailable-outside-node-repl",
+      "timingsMs": {
+        "total": 0.021
+      },
+      "correctness": {
+        "selectedTarget": null,
+        "selectedProfileDirectory": null
+      }
+    },
+    {
+      "caseName": "runtime-tab-create",
+      "iteration": 2,
+      "warmup": false,
+      "status": "skipped",
+      "reason": null,
+      "skippedReason": "trusted-runtime-agent-unavailable-outside-node-repl",
+      "timingsMs": {
+        "total": 0.003
+      },
+      "correctness": {
+        "selectedTarget": null,
+        "selectedProfileDirectory": null
+      }
+    },
+    {
+      "caseName": "process-snapshot",
+      "iteration": 3,
+      "warmup": false,
+      "status": "ok",
+      "reason": null,
+      "skippedReason": null,
+      "timingsMs": {
+        "total": 90.215
+      },
+      "correctness": {
+        "selectedTarget": null,
+        "selectedProfileDirectory": null,
+        "processCount": 1370
+      }
+    },
+    {
+      "caseName": "select-browser",
+      "iteration": 3,
+      "warmup": false,
+      "status": "ok",
+      "reason": "connected-browser",
+      "skippedReason": null,
+      "timingsMs": {
+        "total": 591.774
+      },
+      "correctness": {
+        "selectedTarget": "edge-dev",
+        "selectedProfileDirectory": "Default",
+        "candidateCount": 8
+      }
+    },
+    {
+      "caseName": "connection-status",
+      "iteration": 3,
+      "warmup": false,
+      "status": "ok",
+      "reason": null,
+      "skippedReason": null,
+      "timingsMs": {
+        "total": 217.686
+      },
+      "correctness": {
+        "selectedTarget": "edge-dev",
+        "selectedProfileDirectory": "Default",
+        "connected": true,
+        "connectedMappingCount": 1,
+        "status": "connected",
+        "profileSelectionStatus": "selected",
+        "nativeHostReady": true
+      }
+    },
+    {
+      "caseName": "connection-readiness",
+      "iteration": 3,
+      "warmup": false,
+      "status": "ok",
+      "reason": null,
+      "skippedReason": null,
+      "timingsMs": {
+        "connectionStatus": 193.348,
+        "total": 193.356
+      },
+      "correctness": {
+        "selectedTarget": "edge-dev",
+        "selectedProfileDirectory": "Default",
+        "connected": true,
+        "connectedMappingCount": 1,
+        "status": "connected",
+        "profileSelectionStatus": "selected",
+        "nativeHostReady": true
+      }
+    },
+    {
+      "caseName": "runtime-proof",
+      "iteration": 3,
+      "warmup": false,
+      "status": "skipped",
+      "reason": null,
+      "skippedReason": "trusted-runtime-agent-unavailable-outside-node-repl",
+      "timingsMs": {
+        "total": 0.007
+      },
+      "correctness": {
+        "selectedTarget": null,
+        "selectedProfileDirectory": null
+      }
+    },
+    {
+      "caseName": "runtime-tab-create",
+      "iteration": 3,
+      "warmup": false,
+      "status": "skipped",
+      "reason": null,
+      "skippedReason": "trusted-runtime-agent-unavailable-outside-node-repl",
+      "timingsMs": {
+        "total": 0.003
+      },
+      "correctness": {
+        "selectedTarget": null,
+        "selectedProfileDirectory": null
+      }
+    },
+    {
+      "caseName": "process-snapshot",
+      "iteration": 4,
+      "warmup": false,
+      "status": "ok",
+      "reason": null,
+      "skippedReason": null,
+      "timingsMs": {
+        "total": 109.678
+      },
+      "correctness": {
+        "selectedTarget": null,
+        "selectedProfileDirectory": null,
+        "processCount": 1377
+      }
+    },
+    {
+      "caseName": "select-browser",
+      "iteration": 4,
+      "warmup": false,
+      "status": "ok",
+      "reason": "connected-browser",
+      "skippedReason": null,
+      "timingsMs": {
+        "total": 479.093
+      },
+      "correctness": {
+        "selectedTarget": "edge-dev",
+        "selectedProfileDirectory": "Default",
+        "candidateCount": 8
+      }
+    },
+    {
+      "caseName": "connection-status",
+      "iteration": 4,
+      "warmup": false,
+      "status": "ok",
+      "reason": null,
+      "skippedReason": null,
+      "timingsMs": {
+        "total": 244.275
+      },
+      "correctness": {
+        "selectedTarget": "edge-dev",
+        "selectedProfileDirectory": "Default",
+        "connected": true,
+        "connectedMappingCount": 1,
+        "status": "connected",
+        "profileSelectionStatus": "selected",
+        "nativeHostReady": true
+      }
+    },
+    {
+      "caseName": "connection-readiness",
+      "iteration": 4,
+      "warmup": false,
+      "status": "ok",
+      "reason": null,
+      "skippedReason": null,
+      "timingsMs": {
+        "connectionStatus": 204.369,
+        "total": 204.379
+      },
+      "correctness": {
+        "selectedTarget": "edge-dev",
+        "selectedProfileDirectory": "Default",
+        "connected": true,
+        "connectedMappingCount": 1,
+        "status": "connected",
+        "profileSelectionStatus": "selected",
+        "nativeHostReady": true
+      }
+    },
+    {
+      "caseName": "runtime-proof",
+      "iteration": 4,
+      "warmup": false,
+      "status": "skipped",
+      "reason": null,
+      "skippedReason": "trusted-runtime-agent-unavailable-outside-node-repl",
+      "timingsMs": {
+        "total": 0.013
+      },
+      "correctness": {
+        "selectedTarget": null,
+        "selectedProfileDirectory": null
+      }
+    },
+    {
+      "caseName": "runtime-tab-create",
+      "iteration": 4,
+      "warmup": false,
+      "status": "skipped",
+      "reason": null,
+      "skippedReason": "trusted-runtime-agent-unavailable-outside-node-repl",
+      "timingsMs": {
+        "total": 0.004
+      },
+      "correctness": {
+        "selectedTarget": null,
+        "selectedProfileDirectory": null
+      }
+    },
+    {
+      "caseName": "process-snapshot",
+      "iteration": 5,
+      "warmup": false,
+      "status": "ok",
+      "reason": null,
+      "skippedReason": null,
+      "timingsMs": {
+        "total": 106.216
+      },
+      "correctness": {
+        "selectedTarget": null,
+        "selectedProfileDirectory": null,
+        "processCount": 1380
+      }
+    },
+    {
+      "caseName": "select-browser",
+      "iteration": 5,
+      "warmup": false,
+      "status": "ok",
+      "reason": "connected-browser",
+      "skippedReason": null,
+      "timingsMs": {
+        "total": 418.594
+      },
+      "correctness": {
+        "selectedTarget": "edge-dev",
+        "selectedProfileDirectory": "Default",
+        "candidateCount": 8
+      }
+    },
+    {
+      "caseName": "connection-status",
+      "iteration": 5,
+      "warmup": false,
+      "status": "ok",
+      "reason": null,
+      "skippedReason": null,
+      "timingsMs": {
+        "total": 180.033
+      },
+      "correctness": {
+        "selectedTarget": "edge-dev",
+        "selectedProfileDirectory": "Default",
+        "connected": true,
+        "connectedMappingCount": 1,
+        "status": "connected",
+        "profileSelectionStatus": "selected",
+        "nativeHostReady": true
+      }
+    },
+    {
+      "caseName": "connection-readiness",
+      "iteration": 5,
+      "warmup": false,
+      "status": "ok",
+      "reason": null,
+      "skippedReason": null,
+      "timingsMs": {
+        "connectionStatus": 164.331,
+        "total": 164.339
+      },
+      "correctness": {
+        "selectedTarget": "edge-dev",
+        "selectedProfileDirectory": "Default",
+        "connected": true,
+        "connectedMappingCount": 1,
+        "status": "connected",
+        "profileSelectionStatus": "selected",
+        "nativeHostReady": true
+      }
+    },
+    {
+      "caseName": "runtime-proof",
+      "iteration": 5,
+      "warmup": false,
+      "status": "skipped",
+      "reason": null,
+      "skippedReason": "trusted-runtime-agent-unavailable-outside-node-repl",
+      "timingsMs": {
+        "total": 0.008
+      },
+      "correctness": {
+        "selectedTarget": null,
+        "selectedProfileDirectory": null
+      }
+    },
+    {
+      "caseName": "runtime-tab-create",
+      "iteration": 5,
+      "warmup": false,
+      "status": "skipped",
+      "reason": null,
+      "skippedReason": "trusted-runtime-agent-unavailable-outside-node-repl",
+      "timingsMs": {
+        "total": 0.003
+      },
+      "correctness": {
+        "selectedTarget": null,
+        "selectedProfileDirectory": null
+      }
+    }
+  ],
+  "summary": {
+    "process-snapshot": {
+      "measuredSamples": 5,
+      "failures": 0,
+      "skipped": 0,
+      "medianMs": 95.997,
+      "p95Ms": 109.678,
+      "minMs": 90.215,
+      "maxMs": 109.678
+    },
+    "select-browser": {
+      "measuredSamples": 5,
+      "failures": 0,
+      "skipped": 0,
+      "medianMs": 443.965,
+      "p95Ms": 591.774,
+      "minMs": 394.558,
+      "maxMs": 591.774
+    },
+    "connection-status": {
+      "measuredSamples": 5,
+      "failures": 0,
+      "skipped": 0,
+      "medianMs": 180.033,
+      "p95Ms": 244.275,
+      "minMs": 163.197,
+      "maxMs": 244.275
+    },
+    "connection-readiness": {
+      "measuredSamples": 5,
+      "failures": 0,
+      "skipped": 0,
+      "medianMs": 166.513,
+      "p95Ms": 204.379,
+      "minMs": 154.633,
+      "maxMs": 204.379
+    },
+    "runtime-proof": {
+      "measuredSamples": 0,
+      "failures": 0,
+      "skipped": 5,
+      "medianMs": null,
+      "p95Ms": null,
+      "minMs": null,
+      "maxMs": null
+    },
+    "runtime-tab-create": {
+      "measuredSamples": 0,
+      "failures": 0,
+      "skipped": 5,
+      "medianMs": null,
+      "p95Ms": null,
+      "minMs": null,
+      "maxMs": null
+    }
+  }
+}

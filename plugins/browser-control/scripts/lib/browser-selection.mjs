@@ -2,7 +2,7 @@ import { execFile } from "node:child_process";
 import { promisify } from "node:util";
 
 import { TARGETS, targetIds } from "../../src/targets.mjs";
-import { browserInstallationStatus, browserRunningStatus } from "./browser-detection.mjs";
+import { browserInstallationStatus, browserRunningStatus, runningProcessSnapshot } from "./browser-detection.mjs";
 import { extensionHostSocketMappings } from "./runtime-backends.mjs";
 import { selectExtensionProfile } from "./profiles.mjs";
 
@@ -14,17 +14,32 @@ export async function selectBrowserTarget(options = {}) {
 }
 
 export async function inspectBrowserTargets(options = {}) {
-  const connectedMappings = await extensionHostSocketMappings().catch(() => []);
+  const deps = options.deps ?? {};
+  const getSocketMappings = deps.extensionHostSocketMappings ?? extensionHostSocketMappings;
+  const getFrontmostBundleId = deps.currentFrontmostBundleId ?? currentFrontmostBundleId;
+  const getProcessSnapshot = deps.runningProcessSnapshot ?? runningProcessSnapshot;
+  const getInstallationStatus = deps.browserInstallationStatus ?? browserInstallationStatus;
+  const getRunningStatus = deps.browserRunningStatus ?? browserRunningStatus;
+  const getExtensionProfile = deps.selectExtensionProfile ?? selectExtensionProfile;
+
+  const connectedMappings = await getSocketMappings().catch(() => []);
   const connectedTargetIds = new Set(
     connectedMappings.map((mapping) => mapping.target?.id).filter(Boolean)
   );
-  const frontmostBundleId = await currentFrontmostBundleId().catch(() => null);
+  const frontmostBundleId = await getFrontmostBundleId().catch(() => null);
+  const processes = options.processes ?? getProcessSnapshot({
+    platform: options.platform,
+    execFileSync: options.execFileSync
+  });
 
   return targetIds().map((targetId) => {
     const target = TARGETS[targetId];
-    const installStatus = browserInstallationStatus(target);
-    const runningStatus = browserRunningStatus(target);
-    const profileSelection = selectExtensionProfile(target, {
+    const installStatus = getInstallationStatus(target);
+    const runningStatus = getRunningStatus(target, {
+      platform: options.platform,
+      processes
+    });
+    const profileSelection = getExtensionProfile(target, {
       context: options.context
     });
     const selectedProfile = profileSelection.selectedProfile;

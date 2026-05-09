@@ -16,16 +16,21 @@ import {
 import {
   enrichBackendsFromExistingTabs,
   enrichBackendsFromProcesses,
+  extensionHostSocketMappings,
   mapExtensionHostSockets,
   parseLsofUnixSockets,
-  parsePsProcesses
+  parsePsProcesses,
+  processMapFromSnapshot
 } from "../scripts/lib/runtime-backends.mjs";
-import { browserInstallationStatus, browserRunningStatus } from "../scripts/lib/browser-detection.mjs";
+import { browserInstallationStatus, browserRunningStatus, runningProcessSnapshot, runningProcessTreeSnapshot } from "../scripts/lib/browser-detection.mjs";
+import { connectionStatusForTarget, connectedMappingsFor, publicNativeHost } from "../scripts/lib/connection-status-core.mjs";
+import { latencyStats, summarizeSamples } from "../scripts/lib/latency-metrics.mjs";
 import { commandForTarget } from "../scripts/lib/open-browser-command.mjs";
 import { compareNativeHostManifest, nativeHostStatus } from "../scripts/lib/native-host-status.mjs";
 import { browserProfileState, candidateProfiles, chooseExtensionProfile } from "../scripts/lib/profiles.mjs";
 import { runRuntimeProof } from "../scripts/lib/runtime-proof-runner.mjs";
-import { chooseBrowserTarget } from "../scripts/lib/browser-selection.mjs";
+import { chooseBrowserTarget, inspectBrowserTargets } from "../scripts/lib/browser-selection.mjs";
+import { parseArgs, redactBenchmarkResult, runBenchmark } from "../scripts/benchmark-first-tab-latency.mjs";
 
 test("defines every required browser target", () => {
   assert.deepEqual(targetIds(), [
@@ -183,6 +188,48 @@ test("process parsers ignore unrelated unix sockets and malformed process rows",
   assert.equal(processes.has(Number.NaN), false);
 });
 
+test("process map can be built from shared process tree snapshots", () => {
+  const processes = processMapFromSnapshot([
+    { pid: 88, ppid: 100, executablePath: "/bundle/extension-host", commandLine: "/bundle/extension-host chrome-extension://id/" },
+    { pid: 100, ppid: 1, executablePath: "/Applications/Google Chrome Dev.app/Contents/MacOS/Google Chrome Dev", commandLine: "/Applications/Google Chrome Dev.app/Contents/MacOS/Google Chrome Dev" },
+    { pid: "bad", ppid: 1, commandLine: "ignored" }
+  ]);
+
+  assert.equal(processes.get(88).ppid, 100);
+  assert.match(processes.get(88).args, /chrome-extension/);
+  assert.equal(processes.get(100).ppid, 1);
+  assert.equal(processes.has(Number.NaN), false);
+});
+
+test("extension host socket mappings skip internal ps when process tree snapshot is supplied", async () => {
+  const socketDir = "/socket-root/codex-browser-use";
+  const commands = [];
+  const mappings = await extensionHostSocketMappings({
+    platform: "darwin",
+    socketDir,
+    readdir: async () => ["edge.sock"],
+    processTreeSnapshot: [
+      { pid: 101, ppid: 1001, executablePath: "/bundle/extension-host", commandLine: "/bundle/extension-host chrome-extension://id/" },
+      { pid: 1001, ppid: 1, executablePath: "/Applications/Microsoft Edge Dev.app/Contents/MacOS/Microsoft Edge Dev", commandLine: "/Applications/Microsoft Edge Dev.app/Contents/MacOS/Microsoft Edge Dev" }
+    ],
+    execFile: async (command) => {
+      commands.push(command);
+      assert.equal(command, "lsof");
+      return {
+        stdout: [
+          "COMMAND   PID USER FD TYPE DEVICE SIZE/OFF NODE NAME",
+          `extension 101 user 3u unix 0x1 0t0 ${socketDir}/edge.sock`
+        ].join("\n")
+      };
+    }
+  });
+
+  assert.deepEqual(commands, ["lsof"]);
+  assert.equal(mappings[0].extensionHostPid, 101);
+  assert.equal(mappings[0].parentPid, 1001);
+  assert.equal(mappings[0].target.id, "edge-dev");
+});
+
 test("profile selection prefers explicit profile, then installed last-used profile", () => {
   const profiles = [
     { profileDirectory: "Default", displayLabel: "User - user@example.test", installed: true },
@@ -310,6 +357,80 @@ test("browser selection defaults to running browser with most recent selected pr
 
   assert.equal(selection.reason, "running-browser-most-recent-profile");
   assert.equal(selection.selected.targetId, "edge-dev");
+});
+
+test("browser target inspection shares one process snapshot across running checks", async () => {
+  const processes = [{
+    pid: 42,
+    executablePath: "/Applications/Google Chrome Dev.app/Contents/MacOS/Google Chrome Dev",
+    commandLine: "/Applications/Google Chrome Dev.app/Contents/MacOS/Google Chrome Dev --profile-directory=Default"
+  }];
+  const profile = {
+    activeTime: 100,
+    installed: true,
+    profileDirectory: "Default"
+  };
+  let processSnapshotCalls = 0;
+  let runningStatusCalls = 0;
+  const runningStatusTargets = [];
+
+  const candidates = await inspectBrowserTargets({
+    platform: "darwin",
+    deps: {
+      async extensionHostSocketMappings() {
+        return [{ target: TARGETS["chrome-dev"] }];
+      },
+      async currentFrontmostBundleId() {
+        return TARGETS["edge-dev"].macos.bundleId;
+      },
+      runningProcessSnapshot(options) {
+        processSnapshotCalls += 1;
+        assert.equal(options.platform, "darwin");
+        return processes;
+      },
+      browserInstallationStatus(target) {
+        return {
+          installed: target.id === "chrome-dev",
+          status: target.id === "chrome-dev" ? "installed" : "not-installed",
+          source: "test"
+        };
+      },
+      browserRunningStatus(target, options) {
+        runningStatusCalls += 1;
+        runningStatusTargets.push(target.id);
+        assert.equal(options.platform, "darwin");
+        assert.equal(options.processes, processes);
+        return {
+          running: target.id === "chrome-dev",
+          status: target.id === "chrome-dev" ? "running" : "not-running",
+          matches: []
+        };
+      },
+      selectExtensionProfile() {
+        return {
+          status: "selected",
+          reason: "last-used-profile",
+          selectedProfile: profile,
+          installedProfiles: [profile],
+          profiles: [profile],
+          contextMatches: [],
+          lastUsedProfile: "Default",
+          profileStateStatus: "ok",
+          profileStateError: null
+        };
+      }
+    }
+  });
+
+  assert.equal(processSnapshotCalls, 1);
+  assert.equal(runningStatusCalls, targetIds().length);
+  assert.deepEqual(runningStatusTargets, targetIds());
+
+  const chromeDev = candidates.find((candidate) => candidate.targetId === "chrome-dev");
+  const edgeDev = candidates.find((candidate) => candidate.targetId === "edge-dev");
+  assert.equal(chromeDev.running, true);
+  assert.equal(chromeDev.connected, true);
+  assert.equal(edgeDev.frontmost, true);
 });
 
 test("process enrichment is tab-free and resolves singleton socket mapping", async () => {
@@ -457,6 +578,495 @@ test("explicit profile selection can proceed when Local State is malformed", () 
   assert.equal(selected.reason, "explicit-profile");
   assert.equal(selected.profileStateStatus, "invalid-json");
   assert.equal(selected.selectedProfile.profileDirectory, "Profile 1");
+});
+
+test("latency stats calculate median, nearest-rank p95, and summary counts", () => {
+  assert.deepEqual(latencyStats([30, 10, 20]), {
+    count: 3,
+    medianMs: 20,
+    p95Ms: 30,
+    minMs: 10,
+    maxMs: 30
+  });
+  assert.deepEqual(latencyStats([10, 20, 30, 40]).medianMs, 25);
+  assert.deepEqual(latencyStats([1, 2, 3, 4, 100]).p95Ms, 100);
+
+  const summary = summarizeSamples([
+    { caseName: "connection-readiness", warmup: true, status: "ok", timingsMs: { total: 1 } },
+    { caseName: "connection-readiness", warmup: false, status: "ok", timingsMs: { total: 10 } },
+    { caseName: "connection-readiness", warmup: false, status: "failed", timingsMs: { total: 999 } },
+    { caseName: "connection-readiness", warmup: false, status: "skipped", timingsMs: { total: 999 } }
+  ], "connection-readiness");
+  assert.equal(summary.measuredSamples, 1);
+  assert.equal(summary.failures, 1);
+  assert.equal(summary.skipped, 1);
+  assert.equal(summary.medianMs, 10);
+});
+
+test("benchmark parser accepts opt-in require-connected preflight", () => {
+  const args = parseArgs(["--target", "edge-dev", "--profile-directory", "Default", "--require-connected"]);
+  assert.equal(args.requireConnected, true);
+  assert.equal(args.target, "edge-dev");
+  assert.equal(args.profileDirectory, "Default");
+});
+
+test("benchmark require-connected preflight passes before sampling when pinned target is connected", async () => {
+  const result = await runBenchmark(benchmarkArgs({
+    requireConnected: true,
+    deps: {
+      async connectionStatusForTarget({ target, profileDirectory }) {
+        return benchmarkConnectionStatus({ target, profileDirectory, connected: true });
+      }
+    }
+  }));
+
+  assert.equal(result.measurementPreflight.requireConnected, true);
+  assert.equal(result.measurementPreflight.status, "connected");
+  assert.equal(result.measurementPreflight.target, "edge-dev");
+  assert.equal(result.measurementPreflight.profileDirectory, "Default");
+  assert.equal(result.measurementPreflight.connectedMappingCount, 1);
+  assert.equal(result.measurementPreflight.nativeHostReady, true);
+  assert.equal(result.measurementPreflight.connectionObservable, true);
+  assert.deepEqual(result.samples, []);
+});
+
+test("benchmark require-connected preflight fails before sampling when pinned target is disconnected", async () => {
+  let runCaseCalls = 0;
+  await assert.rejects(
+    () => runBenchmark(benchmarkArgs({
+      cases: ["connection-readiness"],
+      requireConnected: true,
+      deps: {
+        async connectionStatusForTarget({ target, profileDirectory }) {
+          return benchmarkConnectionStatus({ target, profileDirectory, connected: false });
+        },
+        async runCase() {
+          runCaseCalls += 1;
+          throw new Error("sample loop should not run");
+        }
+      }
+    })),
+    (error) => {
+      assert.equal(error.name, "BenchmarkSetupError");
+      assert.equal(error.code, "existing-profile-not-connected");
+      assert.match(error.message, /required connected target edge-dev \/ Default/);
+      return true;
+    }
+  );
+  assert.equal(runCaseCalls, 0);
+});
+
+test("benchmark require-connected preflight can wake and poll until connected", async () => {
+  let wakeCalls = 0;
+  let mappingCalls = 0;
+  const result = await runBenchmark(benchmarkArgs({
+    requireConnected: true,
+    wake: true,
+    deps: {
+      async connectionStatusForTarget({ target, profileDirectory }) {
+        return benchmarkConnectionStatus({ target, profileDirectory, connected: false });
+      },
+      async wakeTarget(target, profileDirectory) {
+        wakeCalls += 1;
+        assert.equal(target.id, "edge-dev");
+        assert.equal(profileDirectory, "Default");
+      },
+      async connectedMappingsFor(target) {
+        mappingCalls += 1;
+        return {
+          observable: true,
+          reason: null,
+          error: null,
+          mappings: mappingCalls === 1 ? [] : [{ extensionHostPid: 101, parentPid: 1001, target }]
+        };
+      }
+    }
+  }));
+
+  assert.equal(wakeCalls, 1);
+  assert.equal(mappingCalls, 2);
+  assert.equal(result.measurementPreflight.status, "connected-after-wake");
+  assert.equal(result.measurementPreflight.wakeAttempted, true);
+  assert.equal(result.measurementPreflight.connectedMappingCount, 1);
+  assert.deepEqual(result.samples, []);
+});
+
+test("benchmark redaction shape keeps counts and drops unapproved detail", () => {
+  const redacted = redactBenchmarkResult({
+    samples: [{
+      caseName: "connection-readiness",
+      iteration: 0,
+      warmup: false,
+      status: "ok",
+      timingsMs: { total: 12.34567 },
+      correctness: {
+        selectedTarget: "chrome-dev",
+        selectedProfileDirectory: "Profile 1",
+        connected: true,
+        connectedMappingCount: 1,
+        commandLine: "secret --profile-directory=Profile 1",
+        tabUrl: "https://secret.example/"
+      }
+    }]
+  });
+  const sample = redacted.samples[0];
+  assert.equal(sample.timingsMs.total, 12.346);
+  assert.equal(sample.correctness.selectedProfileDirectory, "Profile 1");
+  assert.equal("commandLine" in sample.correctness, false);
+  assert.equal("tabUrl" in sample.correctness, false);
+});
+
+test("running process snapshot exposes injectable process scan helper", () => {
+  let calls = 0;
+  const snapshot = runningProcessSnapshot({
+    platform: "darwin",
+    execFileSync(command, args) {
+      calls += 1;
+      assert.equal(command, "ps");
+      assert.deepEqual(args, ["-axo", "pid=,comm=,args="]);
+      return "  42 /Applications/Google Chrome Dev.app/Contents/MacOS/Google Chrome Dev /Applications/Google Chrome Dev.app/Contents/MacOS/Google Chrome Dev\n";
+    }
+  });
+  assert.equal(calls, 1);
+  assert.equal(snapshot[0].pid, 42);
+  assert.match(snapshot[0].commandLine, /Google Chrome Dev/);
+});
+
+test("running process tree snapshot includes parent process ids without changing the legacy scan", () => {
+  let calls = 0;
+  const snapshot = runningProcessTreeSnapshot({
+    platform: "darwin",
+    execFileSync(command, args) {
+      calls += 1;
+      assert.equal(command, "ps");
+      assert.deepEqual(args, ["-axo", "pid=,ppid=,args="]);
+      return "  42 1 /Applications/Google Chrome Dev.app/Contents/MacOS/Google Chrome Dev --profile-directory=Default\n";
+    }
+  });
+  assert.equal(calls, 1);
+  assert.deepEqual(snapshot[0], {
+    pid: 42,
+    ppid: 1,
+    executablePath: "/Applications/Google",
+    commandLine: "/Applications/Google Chrome Dev.app/Contents/MacOS/Google Chrome Dev --profile-directory=Default"
+  });
+});
+
+test("connection status core checks local status before connection observation", async () => {
+  const target = TARGETS["chrome-dev"];
+  const calls = [];
+  let releaseConnectionObservation;
+  const connectionObservationReady = new Promise((resolve) => {
+    releaseConnectionObservation = resolve;
+  });
+  const profile = {
+    profileDirectory: "Default",
+    displayLabel: "Default - user@example.test",
+    user: "user@example.test",
+    installed: true,
+    hasLocalExtensionSettings: true,
+    versions: ["1.0.0"],
+    extensionDir: "/secret/Default/Extensions"
+  };
+
+  const statusPromise = connectionStatusForTarget({
+    target,
+    deps: {
+      connectedMappingsFor() {
+        calls.push("connected:start");
+        return connectionObservationReady;
+      },
+      selectExtensionProfile() {
+        calls.push("select-profile");
+        return {
+          status: "selected",
+          reason: "last-used-profile",
+          selectedProfile: profile,
+          contextMatches: [{ score: 3, matchedTerms: ["user"], profile }],
+          lastUsedProfile: "Default",
+          installedProfiles: [profile],
+          profiles: [profile],
+          profileStateStatus: "ok",
+          profileStateError: null
+        };
+      },
+      browserInstallationStatus() {
+        calls.push("install-status");
+        return { installed: true, status: "installed", source: "macos-app" };
+      },
+      browserRunningStatus() {
+        calls.push("running-status");
+        return { running: true, status: "running", matches: [{ pid: 1001, executableName: "Google Chrome Dev" }] };
+      },
+      nativeHostStatus() {
+        calls.push("native-host-status");
+        return {
+          installed: true,
+          matches: true,
+          ready: true,
+          reasons: [],
+          registry: null,
+          manifestPath: "/secret/native-host.json"
+        };
+      }
+    }
+  });
+
+  assert.deepEqual(calls, [
+    "select-profile",
+    "install-status",
+    "running-status",
+    "native-host-status",
+    "connected:start"
+  ]);
+
+  releaseConnectionObservation({
+    observable: true,
+    reason: null,
+    error: null,
+    mappings: [{ extensionHostPid: 101, parentPid: 1001, target }]
+  });
+  const result = await statusPromise;
+
+  assert.equal(result.status, "connected");
+  assert.equal(result.target, "chrome-dev");
+  assert.equal(result.installed, true);
+  assert.equal(result.running, true);
+  assert.equal(result.extensionInstalled, true);
+  assert.equal(result.profileSelectionStatus, "selected");
+  assert.equal(result.nativeHostReady, true);
+  assert.equal(result.connectionObservable, true);
+  assert.equal(result.connected, true);
+  assert.deepEqual(result.connections, [{ extensionHostPid: 101, parentPid: 1001 }]);
+  assert.deepEqual(result.contextMatches, [{ score: 3, profileDirectory: "Default" }]);
+  assert.equal(result.selectedProfile.profileDirectory, "Default");
+  assert.equal("displayLabel" in result.selectedProfile, false);
+  assert.equal("user" in result.selectedProfile, false);
+  assert.equal("extensionDir" in result.selectedProfile, false);
+  assert.equal("nativeHostManifestPath" in result, false);
+});
+
+test("connection status core shares one process tree with running status and socket mapping", async () => {
+  const target = TARGETS["edge-dev"];
+  const calls = [];
+  const processTreeSnapshot = [
+    { pid: 101, ppid: 1001, executablePath: "/bundle/extension-host", commandLine: "/bundle/extension-host chrome-extension://id/" },
+    { pid: 1001, ppid: 1, executablePath: "/Applications/Microsoft Edge Dev.app/Contents/MacOS/Microsoft Edge Dev", commandLine: "/Applications/Microsoft Edge Dev.app/Contents/MacOS/Microsoft Edge Dev" }
+  ];
+  const profile = {
+    profileDirectory: "Default",
+    displayLabel: "Default - user@example.test",
+    installed: true
+  };
+
+  const result = await connectionStatusForTarget({
+    target,
+    deps: {
+      selectExtensionProfile() {
+        calls.push("select-profile");
+        return {
+          status: "selected",
+          reason: "last-used-profile",
+          selectedProfile: profile,
+          contextMatches: [],
+          lastUsedProfile: "Default",
+          installedProfiles: [profile],
+          profiles: [profile],
+          profileStateStatus: "ok",
+          profileStateError: null
+        };
+      },
+      browserInstallationStatus() {
+        calls.push("install-status");
+        return { installed: true, status: "installed", source: "macos-app" };
+      },
+      runningProcessTreeSnapshot() {
+        calls.push("process-tree");
+        return processTreeSnapshot;
+      },
+      browserRunningStatus(_target, options) {
+        calls.push("running-status");
+        assert.equal(options.processes, processTreeSnapshot);
+        return { running: true, status: "running", matches: [{ pid: 1001, executableName: "Microsoft Edge Dev" }] };
+      },
+      nativeHostStatus() {
+        calls.push("native-host-status");
+        return {
+          installed: true,
+          matches: true,
+          ready: true,
+          reasons: [],
+          registry: null,
+          manifestPath: "/secret/native-host.json"
+        };
+      },
+      connectedMappingsOptions: {
+        platform: "darwin",
+        extensionHostSocketMappings(mappingOptions) {
+          calls.push("socket-mapping");
+          assert.equal(mappingOptions.processTreeSnapshot, processTreeSnapshot);
+          return Promise.resolve([{ extensionHostPid: 101, parentPid: 1001, target }]);
+        }
+      }
+    }
+  });
+
+  assert.deepEqual(calls, [
+    "select-profile",
+    "install-status",
+    "process-tree",
+    "running-status",
+    "native-host-status",
+    "socket-mapping"
+  ]);
+  assert.equal(result.status, "connected");
+  assert.deepEqual(result.connections, [{ extensionHostPid: 101, parentPid: 1001 }]);
+});
+
+test("connection status falls back to socket mapping without shared snapshot when process tree fails", async () => {
+  const target = TARGETS["edge-dev"];
+  const processError = { error: { code: "EPS", message: "ps failed" } };
+  const profile = {
+    profileDirectory: "Default",
+    displayLabel: "Default - user@example.test",
+    installed: true
+  };
+
+  const result = await connectionStatusForTarget({
+    target,
+    deps: {
+      selectExtensionProfile() {
+        return {
+          status: "selected",
+          reason: "last-used-profile",
+          selectedProfile: profile,
+          contextMatches: [],
+          lastUsedProfile: "Default",
+          installedProfiles: [profile],
+          profiles: [profile],
+          profileStateStatus: "ok",
+          profileStateError: null
+        };
+      },
+      browserInstallationStatus() {
+        return { installed: true, status: "installed", source: "macos-app" };
+      },
+      runningProcessTreeSnapshot() {
+        return processError;
+      },
+      browserRunningStatus(_target, options) {
+        assert.equal(options.processes, processError);
+        return { running: false, status: "unknown", matches: [], error: processError.error };
+      },
+      nativeHostStatus() {
+        return {
+          installed: true,
+          matches: true,
+          ready: true,
+          reasons: [],
+          registry: null,
+          manifestPath: "/secret/native-host.json"
+        };
+      },
+      connectedMappingsOptions: {
+        platform: "darwin",
+        extensionHostSocketMappings(mappingOptions) {
+          assert.equal("processTreeSnapshot" in mappingOptions, false);
+          return Promise.resolve([{ extensionHostPid: 101, parentPid: 1001, target }]);
+        }
+      }
+    }
+  });
+
+  assert.equal(result.running, false);
+  assert.equal(result.runningStatus.status, "unknown");
+  assert.equal(result.status, "connected");
+  assert.deepEqual(result.connections, [{ extensionHostPid: 101, parentPid: 1001 }]);
+});
+
+
+test("connection status core preserves output shape and default redaction", async () => {
+  const target = TARGETS["chrome-dev"];
+  const profile = {
+    profileDirectory: "Profile 1",
+    displayLabel: "Work - work@example.test",
+    user: "work@example.test",
+    installed: true,
+    hasLocalExtensionSettings: true,
+    versions: ["1.0.0"],
+    extensionDir: "/secret/Profile 1/Extensions"
+  };
+  const result = await connectionStatusForTarget({
+    target,
+    profileDirectory: "Profile 1",
+    deps: {
+      selectExtensionProfile() {
+        return {
+          status: "selected",
+          reason: "explicit-profile",
+          selectedProfile: profile,
+          contextMatches: [{ score: 4, matchedTerms: ["work"], profile }],
+          lastUsedProfile: "Profile 1",
+          installedProfiles: [profile],
+          profiles: [profile],
+          profileStateStatus: "ok",
+          profileStateError: null
+        };
+      },
+      async connectedMappingsFor() {
+        return {
+          observable: true,
+          reason: null,
+          error: null,
+          mappings: [{ extensionHostPid: 101, parentPid: 1001, target }]
+        };
+      },
+      browserInstallationStatus() {
+        return { installed: true, status: "installed", source: "macos-app" };
+      },
+      browserRunningStatus() {
+        return { running: true, status: "running", matches: [{ pid: 1001, executableName: "Google Chrome Dev" }] };
+      },
+      nativeHostStatus() {
+        return {
+          installed: true,
+          matches: true,
+          ready: true,
+          reasons: [],
+          registry: null,
+          manifestPath: "/secret/native-host.json"
+        };
+      }
+    }
+  });
+
+  assert.equal(result.status, "connected");
+  assert.equal(result.selectedProfile.profileDirectory, "Profile 1");
+  assert.equal("displayLabel" in result.selectedProfile, false);
+  assert.equal("user" in result.selectedProfile, false);
+  assert.equal("extensionDir" in result.selectedProfile, false);
+  assert.equal("nativeHostManifestPath" in result, false);
+  assert.deepEqual(result.connections, [{ extensionHostPid: 101, parentPid: 1001 }]);
+  assert.deepEqual(result.contextMatches, [{ score: 4, profileDirectory: "Profile 1" }]);
+});
+
+test("connection status core keeps Windows socket observation unsupported", async () => {
+  const target = TARGETS["chrome-dev"];
+  const observation = await connectedMappingsFor(target, { platform: "win32" });
+  assert.equal(observation.observable, false);
+  assert.equal(observation.reason, "windows-unix-socket-observation-unavailable");
+  assert.deepEqual(observation.mappings, []);
+
+  const publicStatus = publicNativeHost({
+    installed: true,
+    matches: false,
+    ready: false,
+    reasons: ["registry-path-mismatch"],
+    manifestPath: "C:\\secret\\manifest.json",
+    registry: { installed: true, matches: false, path: "C:\\secret\\manifest.json" }
+  });
+  assert.equal("manifestPath" in publicStatus, false);
+  assert.deepEqual(publicStatus.registry, { installed: true, matches: false });
 });
 
 test("browser detection redacts process command details by default", () => {
@@ -657,6 +1267,57 @@ test("plugin manifest references correctly sized icon assets", () => {
   assert.deepEqual(pngSize(path.join(root, "assets", "icon.png")), { width: 512, height: 512 });
   assert.deepEqual(pngSize(path.join(root, "assets", "logo.png")), { width: 1024, height: 1024 });
 });
+
+function benchmarkArgs(overrides = {}) {
+  return {
+    cases: [],
+    context: null,
+    includeSensitive: false,
+    includeTabCreate: false,
+    json: false,
+    output: null,
+    pollMs: 1,
+    profileDirectory: "Default",
+    requireConnected: false,
+    samples: 1,
+    tabUrl: "about:blank",
+    target: "edge-dev",
+    timeoutMs: 50,
+    wake: false,
+    warmups: 0,
+    ...overrides
+  };
+}
+
+function benchmarkConnectionStatus({ target, profileDirectory, connected }) {
+  return {
+    target: target.id,
+    displayName: target.displayName,
+    installed: true,
+    running: true,
+    installStatus: { installed: true, status: "installed", source: "test" },
+    runningStatus: { running: true, status: "running", matches: [] },
+    extensionInstalled: true,
+    profileSelectionStatus: "selected",
+    profileSelectionReason: "explicit-profile",
+    profileStateStatus: "ok",
+    profileStateError: null,
+    contextMatches: [],
+    lastUsedProfile: profileDirectory,
+    selectedProfile: { profileDirectory },
+    extensionProfiles: [{ profileDirectory }],
+    nativeHost: { installed: true, matches: true, ready: true, reasons: [], registry: null },
+    nativeHostInstalled: true,
+    nativeHostMatches: true,
+    nativeHostReady: true,
+    connectionObservable: true,
+    connectionObservationReason: null,
+    connectionObservationError: null,
+    connected,
+    connections: connected ? [{ extensionHostPid: 101, parentPid: 1001 }] : [],
+    status: connected ? "connected" : "existing-profile-not-connected"
+  };
+}
 
 function pngSize(filePath) {
   const buffer = readFileSync(filePath);

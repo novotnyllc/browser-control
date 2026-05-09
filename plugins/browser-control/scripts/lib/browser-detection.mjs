@@ -62,9 +62,19 @@ export function browserInstallationStatus(target, options = {}) {
   };
 }
 
+export function runningProcessSnapshot(options = {}) {
+  const platform = options.platform ?? process.platform;
+  return runningProcesses({ platform, execFileSync: options.execFileSync });
+}
+
+export function runningProcessTreeSnapshot(options = {}) {
+  const platform = options.platform ?? process.platform;
+  return runningProcessTree({ platform, execFileSync: options.execFileSync });
+}
+
 export function browserRunningStatus(target, options = {}) {
   const platform = options.platform ?? process.platform;
-  const processes = options.processes ?? runningProcesses({ platform, execFileSync: options.execFileSync });
+  const processes = options.processes ?? runningProcessSnapshot({ platform, execFileSync: options.execFileSync });
   if (processes.error) {
     return {
       running: false,
@@ -152,6 +162,41 @@ function runningProcesses({ platform, execFileSync: run = execFileSync }) {
       .map((match) => ({
         pid: Number(match[1]),
         executablePath: match[2],
+        commandLine: match[3]
+      }));
+  } catch (error) {
+    return { error: { code: error.code, message: error.message } };
+  }
+}
+
+function runningProcessTree({ platform, execFileSync: run = execFileSync }) {
+  try {
+    if (platform === "win32") {
+      const stdout = run("powershell.exe", [
+        "-NoProfile",
+        "-NonInteractive",
+        "-Command",
+        "Get-CimInstance Win32_Process | Select-Object ProcessId,ParentProcessId,ExecutablePath,CommandLine | ConvertTo-Json -Compress"
+      ], { encoding: "utf8" });
+      if (!stdout.trim()) return [];
+      const parsed = JSON.parse(stdout);
+      return (Array.isArray(parsed) ? parsed : [parsed]).map((entry) => ({
+        pid: Number(entry.ProcessId),
+        ppid: Number.isInteger(Number(entry.ParentProcessId)) ? Number(entry.ParentProcessId) : null,
+        executablePath: entry.ExecutablePath || null,
+        commandLine: entry.CommandLine || entry.ExecutablePath || ""
+      }));
+    }
+
+    const stdout = run("ps", ["-axo", "pid=,ppid=,args="], { encoding: "utf8" });
+    return stdout
+      .split(/\r?\n/)
+      .map((line) => line.match(/^\s*(\d+)\s+(\d+)\s+(.+)$/))
+      .filter(Boolean)
+      .map((match) => ({
+        pid: Number(match[1]),
+        ppid: Number(match[2]),
+        executablePath: firstExecutablePath(match[3], platform),
         commandLine: match[3]
       }));
   } catch (error) {

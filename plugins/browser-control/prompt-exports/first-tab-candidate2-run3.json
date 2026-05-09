@@ -1,0 +1,1209 @@
+{
+  "schemaVersion": 1,
+  "runId": "first-tab-2026-05-08T23-13-33-932Z",
+  "timestamp": "2026-05-08T23:13:33.932Z",
+  "platform": "darwin",
+  "arch": "arm64",
+  "nodeVersion": "v25.9.0",
+  "target": {
+    "id": "chrome-dev",
+    "displayName": "Google Chrome Dev"
+  },
+  "profileDirectory": "Default",
+  "profileContextProvided": false,
+  "runtimeAvailable": true,
+  "wakeRequested": false,
+  "timeoutMs": 10000,
+  "pollMs": 100,
+  "samples": [
+    {
+      "caseName": "process-snapshot",
+      "iteration": 0,
+      "warmup": true,
+      "status": "ok",
+      "reason": null,
+      "skippedReason": null,
+      "timingsMs": {
+        "total": 87.205
+      },
+      "correctness": {
+        "selectedTarget": null,
+        "selectedProfileDirectory": null,
+        "processCount": 1343
+      }
+    },
+    {
+      "caseName": "select-browser",
+      "iteration": 0,
+      "warmup": true,
+      "status": "ok",
+      "reason": "connected-browser",
+      "skippedReason": null,
+      "timingsMs": {
+        "total": 400.941
+      },
+      "correctness": {
+        "selectedTarget": "chrome-dev",
+        "selectedProfileDirectory": "Default",
+        "candidateCount": 8
+      }
+    },
+    {
+      "caseName": "connection-status",
+      "iteration": 0,
+      "warmup": true,
+      "status": "ok",
+      "reason": null,
+      "skippedReason": null,
+      "timingsMs": {
+        "total": 165.891
+      },
+      "correctness": {
+        "selectedTarget": "chrome-dev",
+        "selectedProfileDirectory": "Default",
+        "connected": true,
+        "connectedMappingCount": 3,
+        "status": "connected",
+        "profileSelectionStatus": "selected",
+        "nativeHostReady": true
+      }
+    },
+    {
+      "caseName": "connection-readiness",
+      "iteration": 0,
+      "warmup": true,
+      "status": "ok",
+      "reason": null,
+      "skippedReason": null,
+      "timingsMs": {
+        "connectionStatus": 151.362,
+        "total": 151.436
+      },
+      "correctness": {
+        "selectedTarget": "chrome-dev",
+        "selectedProfileDirectory": "Default",
+        "connected": true,
+        "connectedMappingCount": 3,
+        "status": "connected",
+        "profileSelectionStatus": "selected",
+        "nativeHostReady": true
+      }
+    },
+    {
+      "caseName": "runtime-proof",
+      "iteration": 0,
+      "warmup": true,
+      "status": "skipped",
+      "reason": null,
+      "skippedReason": "trusted-runtime-agent-unavailable-outside-node-repl",
+      "timingsMs": {
+        "total": 0.139
+      },
+      "correctness": {
+        "selectedTarget": null,
+        "selectedProfileDirectory": null
+      }
+    },
+    {
+      "caseName": "runtime-tab-create",
+      "iteration": 0,
+      "warmup": true,
+      "status": "skipped",
+      "reason": null,
+      "skippedReason": "trusted-runtime-agent-unavailable-outside-node-repl",
+      "timingsMs": {
+        "total": 0.053
+      },
+      "correctness": {
+        "selectedTarget": null,
+        "selectedProfileDirectory": null
+      }
+    },
+    {
+      "caseName": "process-snapshot",
+      "iteration": 1,
+      "warmup": false,
+      "status": "ok",
+      "reason": null,
+      "skippedReason": null,
+      "timingsMs": {
+        "total": 84.688
+      },
+      "correctness": {
+        "selectedTarget": null,
+        "selectedProfileDirectory": null,
+        "processCount": 1343
+      }
+    },
+    {
+      "caseName": "select-browser",
+      "iteration": 1,
+      "warmup": false,
+      "status": "ok",
+      "reason": "connected-browser",
+      "skippedReason": null,
+      "timingsMs": {
+        "total": 393.736
+      },
+      "correctness": {
+        "selectedTarget": "chrome-dev",
+        "selectedProfileDirectory": "Default",
+        "candidateCount": 8
+      }
+    },
+    {
+      "caseName": "connection-status",
+      "iteration": 1,
+      "warmup": false,
+      "status": "ok",
+      "reason": null,
+      "skippedReason": null,
+      "timingsMs": {
+        "total": 153.813
+      },
+      "correctness": {
+        "selectedTarget": "chrome-dev",
+        "selectedProfileDirectory": "Default",
+        "connected": true,
+        "connectedMappingCount": 3,
+        "status": "connected",
+        "profileSelectionStatus": "selected",
+        "nativeHostReady": true
+      }
+    },
+    {
+      "caseName": "connection-readiness",
+      "iteration": 1,
+      "warmup": false,
+      "status": "ok",
+      "reason": null,
+      "skippedReason": null,
+      "timingsMs": {
+        "connectionStatus": 154.78,
+        "total": 154.793
+      },
+      "correctness": {
+        "selectedTarget": "chrome-dev",
+        "selectedProfileDirectory": "Default",
+        "connected": true,
+        "connectedMappingCount": 3,
+        "status": "connected",
+        "profileSelectionStatus": "selected",
+        "nativeHostReady": true
+      }
+    },
+    {
+      "caseName": "runtime-proof",
+      "iteration": 1,
+      "warmup": false,
+      "status": "skipped",
+      "reason": null,
+      "skippedReason": "trusted-runtime-agent-unavailable-outside-node-repl",
+      "timingsMs": {
+        "total": 0.011
+      },
+      "correctness": {
+        "selectedTarget": null,
+        "selectedProfileDirectory": null
+      }
+    },
+    {
+      "caseName": "runtime-tab-create",
+      "iteration": 1,
+      "warmup": false,
+      "status": "skipped",
+      "reason": null,
+      "skippedReason": "trusted-runtime-agent-unavailable-outside-node-repl",
+      "timingsMs": {
+        "total": 0.003
+      },
+      "correctness": {
+        "selectedTarget": null,
+        "selectedProfileDirectory": null
+      }
+    },
+    {
+      "caseName": "process-snapshot",
+      "iteration": 2,
+      "warmup": false,
+      "status": "ok",
+      "reason": null,
+      "skippedReason": null,
+      "timingsMs": {
+        "total": 86.069
+      },
+      "correctness": {
+        "selectedTarget": null,
+        "selectedProfileDirectory": null,
+        "processCount": 1343
+      }
+    },
+    {
+      "caseName": "select-browser",
+      "iteration": 2,
+      "warmup": false,
+      "status": "ok",
+      "reason": "connected-browser",
+      "skippedReason": null,
+      "timingsMs": {
+        "total": 391.331
+      },
+      "correctness": {
+        "selectedTarget": "chrome-dev",
+        "selectedProfileDirectory": "Default",
+        "candidateCount": 8
+      }
+    },
+    {
+      "caseName": "connection-status",
+      "iteration": 2,
+      "warmup": false,
+      "status": "ok",
+      "reason": null,
+      "skippedReason": null,
+      "timingsMs": {
+        "total": 151.93
+      },
+      "correctness": {
+        "selectedTarget": "chrome-dev",
+        "selectedProfileDirectory": "Default",
+        "connected": true,
+        "connectedMappingCount": 3,
+        "status": "connected",
+        "profileSelectionStatus": "selected",
+        "nativeHostReady": true
+      }
+    },
+    {
+      "caseName": "connection-readiness",
+      "iteration": 2,
+      "warmup": false,
+      "status": "ok",
+      "reason": null,
+      "skippedReason": null,
+      "timingsMs": {
+        "connectionStatus": 151.241,
+        "total": 151.25
+      },
+      "correctness": {
+        "selectedTarget": "chrome-dev",
+        "selectedProfileDirectory": "Default",
+        "connected": true,
+        "connectedMappingCount": 3,
+        "status": "connected",
+        "profileSelectionStatus": "selected",
+        "nativeHostReady": true
+      }
+    },
+    {
+      "caseName": "runtime-proof",
+      "iteration": 2,
+      "warmup": false,
+      "status": "skipped",
+      "reason": null,
+      "skippedReason": "trusted-runtime-agent-unavailable-outside-node-repl",
+      "timingsMs": {
+        "total": 0.015
+      },
+      "correctness": {
+        "selectedTarget": null,
+        "selectedProfileDirectory": null
+      }
+    },
+    {
+      "caseName": "runtime-tab-create",
+      "iteration": 2,
+      "warmup": false,
+      "status": "skipped",
+      "reason": null,
+      "skippedReason": "trusted-runtime-agent-unavailable-outside-node-repl",
+      "timingsMs": {
+        "total": 0.003
+      },
+      "correctness": {
+        "selectedTarget": null,
+        "selectedProfileDirectory": null
+      }
+    },
+    {
+      "caseName": "process-snapshot",
+      "iteration": 3,
+      "warmup": false,
+      "status": "ok",
+      "reason": null,
+      "skippedReason": null,
+      "timingsMs": {
+        "total": 81.696
+      },
+      "correctness": {
+        "selectedTarget": null,
+        "selectedProfileDirectory": null,
+        "processCount": 1344
+      }
+    },
+    {
+      "caseName": "select-browser",
+      "iteration": 3,
+      "warmup": false,
+      "status": "ok",
+      "reason": "connected-browser",
+      "skippedReason": null,
+      "timingsMs": {
+        "total": 396.204
+      },
+      "correctness": {
+        "selectedTarget": "chrome-dev",
+        "selectedProfileDirectory": "Default",
+        "candidateCount": 8
+      }
+    },
+    {
+      "caseName": "connection-status",
+      "iteration": 3,
+      "warmup": false,
+      "status": "ok",
+      "reason": null,
+      "skippedReason": null,
+      "timingsMs": {
+        "total": 150.285
+      },
+      "correctness": {
+        "selectedTarget": "chrome-dev",
+        "selectedProfileDirectory": "Default",
+        "connected": true,
+        "connectedMappingCount": 3,
+        "status": "connected",
+        "profileSelectionStatus": "selected",
+        "nativeHostReady": true
+      }
+    },
+    {
+      "caseName": "connection-readiness",
+      "iteration": 3,
+      "warmup": false,
+      "status": "ok",
+      "reason": null,
+      "skippedReason": null,
+      "timingsMs": {
+        "connectionStatus": 150.46,
+        "total": 150.468
+      },
+      "correctness": {
+        "selectedTarget": "chrome-dev",
+        "selectedProfileDirectory": "Default",
+        "connected": true,
+        "connectedMappingCount": 3,
+        "status": "connected",
+        "profileSelectionStatus": "selected",
+        "nativeHostReady": true
+      }
+    },
+    {
+      "caseName": "runtime-proof",
+      "iteration": 3,
+      "warmup": false,
+      "status": "skipped",
+      "reason": null,
+      "skippedReason": "trusted-runtime-agent-unavailable-outside-node-repl",
+      "timingsMs": {
+        "total": 0.011
+      },
+      "correctness": {
+        "selectedTarget": null,
+        "selectedProfileDirectory": null
+      }
+    },
+    {
+      "caseName": "runtime-tab-create",
+      "iteration": 3,
+      "warmup": false,
+      "status": "skipped",
+      "reason": null,
+      "skippedReason": "trusted-runtime-agent-unavailable-outside-node-repl",
+      "timingsMs": {
+        "total": 0.003
+      },
+      "correctness": {
+        "selectedTarget": null,
+        "selectedProfileDirectory": null
+      }
+    },
+    {
+      "caseName": "process-snapshot",
+      "iteration": 4,
+      "warmup": false,
+      "status": "ok",
+      "reason": null,
+      "skippedReason": null,
+      "timingsMs": {
+        "total": 84.608
+      },
+      "correctness": {
+        "selectedTarget": null,
+        "selectedProfileDirectory": null,
+        "processCount": 1343
+      }
+    },
+    {
+      "caseName": "select-browser",
+      "iteration": 4,
+      "warmup": false,
+      "status": "ok",
+      "reason": "connected-browser",
+      "skippedReason": null,
+      "timingsMs": {
+        "total": 405.587
+      },
+      "correctness": {
+        "selectedTarget": "chrome-dev",
+        "selectedProfileDirectory": "Default",
+        "candidateCount": 8
+      }
+    },
+    {
+      "caseName": "connection-status",
+      "iteration": 4,
+      "warmup": false,
+      "status": "ok",
+      "reason": null,
+      "skippedReason": null,
+      "timingsMs": {
+        "total": 148.371
+      },
+      "correctness": {
+        "selectedTarget": "chrome-dev",
+        "selectedProfileDirectory": "Default",
+        "connected": true,
+        "connectedMappingCount": 3,
+        "status": "connected",
+        "profileSelectionStatus": "selected",
+        "nativeHostReady": true
+      }
+    },
+    {
+      "caseName": "connection-readiness",
+      "iteration": 4,
+      "warmup": false,
+      "status": "ok",
+      "reason": null,
+      "skippedReason": null,
+      "timingsMs": {
+        "connectionStatus": 151.609,
+        "total": 151.621
+      },
+      "correctness": {
+        "selectedTarget": "chrome-dev",
+        "selectedProfileDirectory": "Default",
+        "connected": true,
+        "connectedMappingCount": 3,
+        "status": "connected",
+        "profileSelectionStatus": "selected",
+        "nativeHostReady": true
+      }
+    },
+    {
+      "caseName": "runtime-proof",
+      "iteration": 4,
+      "warmup": false,
+      "status": "skipped",
+      "reason": null,
+      "skippedReason": "trusted-runtime-agent-unavailable-outside-node-repl",
+      "timingsMs": {
+        "total": 0.011
+      },
+      "correctness": {
+        "selectedTarget": null,
+        "selectedProfileDirectory": null
+      }
+    },
+    {
+      "caseName": "runtime-tab-create",
+      "iteration": 4,
+      "warmup": false,
+      "status": "skipped",
+      "reason": null,
+      "skippedReason": "trusted-runtime-agent-unavailable-outside-node-repl",
+      "timingsMs": {
+        "total": 0.003
+      },
+      "correctness": {
+        "selectedTarget": null,
+        "selectedProfileDirectory": null
+      }
+    },
+    {
+      "caseName": "process-snapshot",
+      "iteration": 5,
+      "warmup": false,
+      "status": "ok",
+      "reason": null,
+      "skippedReason": null,
+      "timingsMs": {
+        "total": 84.427
+      },
+      "correctness": {
+        "selectedTarget": null,
+        "selectedProfileDirectory": null,
+        "processCount": 1343
+      }
+    },
+    {
+      "caseName": "select-browser",
+      "iteration": 5,
+      "warmup": false,
+      "status": "ok",
+      "reason": "connected-browser",
+      "skippedReason": null,
+      "timingsMs": {
+        "total": 397.312
+      },
+      "correctness": {
+        "selectedTarget": "chrome-dev",
+        "selectedProfileDirectory": "Default",
+        "candidateCount": 8
+      }
+    },
+    {
+      "caseName": "connection-status",
+      "iteration": 5,
+      "warmup": false,
+      "status": "ok",
+      "reason": null,
+      "skippedReason": null,
+      "timingsMs": {
+        "total": 152.2
+      },
+      "correctness": {
+        "selectedTarget": "chrome-dev",
+        "selectedProfileDirectory": "Default",
+        "connected": true,
+        "connectedMappingCount": 3,
+        "status": "connected",
+        "profileSelectionStatus": "selected",
+        "nativeHostReady": true
+      }
+    },
+    {
+      "caseName": "connection-readiness",
+      "iteration": 5,
+      "warmup": false,
+      "status": "ok",
+      "reason": null,
+      "skippedReason": null,
+      "timingsMs": {
+        "connectionStatus": 148.785,
+        "total": 148.798
+      },
+      "correctness": {
+        "selectedTarget": "chrome-dev",
+        "selectedProfileDirectory": "Default",
+        "connected": true,
+        "connectedMappingCount": 3,
+        "status": "connected",
+        "profileSelectionStatus": "selected",
+        "nativeHostReady": true
+      }
+    },
+    {
+      "caseName": "runtime-proof",
+      "iteration": 5,
+      "warmup": false,
+      "status": "skipped",
+      "reason": null,
+      "skippedReason": "trusted-runtime-agent-unavailable-outside-node-repl",
+      "timingsMs": {
+        "total": 0.016
+      },
+      "correctness": {
+        "selectedTarget": null,
+        "selectedProfileDirectory": null
+      }
+    },
+    {
+      "caseName": "runtime-tab-create",
+      "iteration": 5,
+      "warmup": false,
+      "status": "skipped",
+      "reason": null,
+      "skippedReason": "trusted-runtime-agent-unavailable-outside-node-repl",
+      "timingsMs": {
+        "total": 0.004
+      },
+      "correctness": {
+        "selectedTarget": null,
+        "selectedProfileDirectory": null
+      }
+    },
+    {
+      "caseName": "process-snapshot",
+      "iteration": 6,
+      "warmup": false,
+      "status": "ok",
+      "reason": null,
+      "skippedReason": null,
+      "timingsMs": {
+        "total": 80.904
+      },
+      "correctness": {
+        "selectedTarget": null,
+        "selectedProfileDirectory": null,
+        "processCount": 1343
+      }
+    },
+    {
+      "caseName": "select-browser",
+      "iteration": 6,
+      "warmup": false,
+      "status": "ok",
+      "reason": "connected-browser",
+      "skippedReason": null,
+      "timingsMs": {
+        "total": 376.992
+      },
+      "correctness": {
+        "selectedTarget": "chrome-dev",
+        "selectedProfileDirectory": "Default",
+        "candidateCount": 8
+      }
+    },
+    {
+      "caseName": "connection-status",
+      "iteration": 6,
+      "warmup": false,
+      "status": "ok",
+      "reason": null,
+      "skippedReason": null,
+      "timingsMs": {
+        "total": 150.511
+      },
+      "correctness": {
+        "selectedTarget": "chrome-dev",
+        "selectedProfileDirectory": "Default",
+        "connected": true,
+        "connectedMappingCount": 3,
+        "status": "connected",
+        "profileSelectionStatus": "selected",
+        "nativeHostReady": true
+      }
+    },
+    {
+      "caseName": "connection-readiness",
+      "iteration": 6,
+      "warmup": false,
+      "status": "ok",
+      "reason": null,
+      "skippedReason": null,
+      "timingsMs": {
+        "connectionStatus": 152.94,
+        "total": 152.952
+      },
+      "correctness": {
+        "selectedTarget": "chrome-dev",
+        "selectedProfileDirectory": "Default",
+        "connected": true,
+        "connectedMappingCount": 3,
+        "status": "connected",
+        "profileSelectionStatus": "selected",
+        "nativeHostReady": true
+      }
+    },
+    {
+      "caseName": "runtime-proof",
+      "iteration": 6,
+      "warmup": false,
+      "status": "skipped",
+      "reason": null,
+      "skippedReason": "trusted-runtime-agent-unavailable-outside-node-repl",
+      "timingsMs": {
+        "total": 0.012
+      },
+      "correctness": {
+        "selectedTarget": null,
+        "selectedProfileDirectory": null
+      }
+    },
+    {
+      "caseName": "runtime-tab-create",
+      "iteration": 6,
+      "warmup": false,
+      "status": "skipped",
+      "reason": null,
+      "skippedReason": "trusted-runtime-agent-unavailable-outside-node-repl",
+      "timingsMs": {
+        "total": 0.003
+      },
+      "correctness": {
+        "selectedTarget": null,
+        "selectedProfileDirectory": null
+      }
+    },
+    {
+      "caseName": "process-snapshot",
+      "iteration": 7,
+      "warmup": false,
+      "status": "ok",
+      "reason": null,
+      "skippedReason": null,
+      "timingsMs": {
+        "total": 80.884
+      },
+      "correctness": {
+        "selectedTarget": null,
+        "selectedProfileDirectory": null,
+        "processCount": 1343
+      }
+    },
+    {
+      "caseName": "select-browser",
+      "iteration": 7,
+      "warmup": false,
+      "status": "ok",
+      "reason": "connected-browser",
+      "skippedReason": null,
+      "timingsMs": {
+        "total": 391.653
+      },
+      "correctness": {
+        "selectedTarget": "chrome-dev",
+        "selectedProfileDirectory": "Default",
+        "candidateCount": 8
+      }
+    },
+    {
+      "caseName": "connection-status",
+      "iteration": 7,
+      "warmup": false,
+      "status": "ok",
+      "reason": null,
+      "skippedReason": null,
+      "timingsMs": {
+        "total": 156.609
+      },
+      "correctness": {
+        "selectedTarget": "chrome-dev",
+        "selectedProfileDirectory": "Default",
+        "connected": true,
+        "connectedMappingCount": 3,
+        "status": "connected",
+        "profileSelectionStatus": "selected",
+        "nativeHostReady": true
+      }
+    },
+    {
+      "caseName": "connection-readiness",
+      "iteration": 7,
+      "warmup": false,
+      "status": "ok",
+      "reason": null,
+      "skippedReason": null,
+      "timingsMs": {
+        "connectionStatus": 154.819,
+        "total": 154.836
+      },
+      "correctness": {
+        "selectedTarget": "chrome-dev",
+        "selectedProfileDirectory": "Default",
+        "connected": true,
+        "connectedMappingCount": 3,
+        "status": "connected",
+        "profileSelectionStatus": "selected",
+        "nativeHostReady": true
+      }
+    },
+    {
+      "caseName": "runtime-proof",
+      "iteration": 7,
+      "warmup": false,
+      "status": "skipped",
+      "reason": null,
+      "skippedReason": "trusted-runtime-agent-unavailable-outside-node-repl",
+      "timingsMs": {
+        "total": 0.013
+      },
+      "correctness": {
+        "selectedTarget": null,
+        "selectedProfileDirectory": null
+      }
+    },
+    {
+      "caseName": "runtime-tab-create",
+      "iteration": 7,
+      "warmup": false,
+      "status": "skipped",
+      "reason": null,
+      "skippedReason": "trusted-runtime-agent-unavailable-outside-node-repl",
+      "timingsMs": {
+        "total": 0.004
+      },
+      "correctness": {
+        "selectedTarget": null,
+        "selectedProfileDirectory": null
+      }
+    },
+    {
+      "caseName": "process-snapshot",
+      "iteration": 8,
+      "warmup": false,
+      "status": "ok",
+      "reason": null,
+      "skippedReason": null,
+      "timingsMs": {
+        "total": 83.822
+      },
+      "correctness": {
+        "selectedTarget": null,
+        "selectedProfileDirectory": null,
+        "processCount": 1343
+      }
+    },
+    {
+      "caseName": "select-browser",
+      "iteration": 8,
+      "warmup": false,
+      "status": "ok",
+      "reason": "connected-browser",
+      "skippedReason": null,
+      "timingsMs": {
+        "total": 402.726
+      },
+      "correctness": {
+        "selectedTarget": "chrome-dev",
+        "selectedProfileDirectory": "Default",
+        "candidateCount": 8
+      }
+    },
+    {
+      "caseName": "connection-status",
+      "iteration": 8,
+      "warmup": false,
+      "status": "ok",
+      "reason": null,
+      "skippedReason": null,
+      "timingsMs": {
+        "total": 151.965
+      },
+      "correctness": {
+        "selectedTarget": "chrome-dev",
+        "selectedProfileDirectory": "Default",
+        "connected": true,
+        "connectedMappingCount": 3,
+        "status": "connected",
+        "profileSelectionStatus": "selected",
+        "nativeHostReady": true
+      }
+    },
+    {
+      "caseName": "connection-readiness",
+      "iteration": 8,
+      "warmup": false,
+      "status": "ok",
+      "reason": null,
+      "skippedReason": null,
+      "timingsMs": {
+        "connectionStatus": 151.431,
+        "total": 151.446
+      },
+      "correctness": {
+        "selectedTarget": "chrome-dev",
+        "selectedProfileDirectory": "Default",
+        "connected": true,
+        "connectedMappingCount": 3,
+        "status": "connected",
+        "profileSelectionStatus": "selected",
+        "nativeHostReady": true
+      }
+    },
+    {
+      "caseName": "runtime-proof",
+      "iteration": 8,
+      "warmup": false,
+      "status": "skipped",
+      "reason": null,
+      "skippedReason": "trusted-runtime-agent-unavailable-outside-node-repl",
+      "timingsMs": {
+        "total": 0.011
+      },
+      "correctness": {
+        "selectedTarget": null,
+        "selectedProfileDirectory": null
+      }
+    },
+    {
+      "caseName": "runtime-tab-create",
+      "iteration": 8,
+      "warmup": false,
+      "status": "skipped",
+      "reason": null,
+      "skippedReason": "trusted-runtime-agent-unavailable-outside-node-repl",
+      "timingsMs": {
+        "total": 0.003
+      },
+      "correctness": {
+        "selectedTarget": null,
+        "selectedProfileDirectory": null
+      }
+    },
+    {
+      "caseName": "process-snapshot",
+      "iteration": 9,
+      "warmup": false,
+      "status": "ok",
+      "reason": null,
+      "skippedReason": null,
+      "timingsMs": {
+        "total": 82.739
+      },
+      "correctness": {
+        "selectedTarget": null,
+        "selectedProfileDirectory": null,
+        "processCount": 1342
+      }
+    },
+    {
+      "caseName": "select-browser",
+      "iteration": 9,
+      "warmup": false,
+      "status": "ok",
+      "reason": "connected-browser",
+      "skippedReason": null,
+      "timingsMs": {
+        "total": 397.878
+      },
+      "correctness": {
+        "selectedTarget": "chrome-dev",
+        "selectedProfileDirectory": "Default",
+        "candidateCount": 8
+      }
+    },
+    {
+      "caseName": "connection-status",
+      "iteration": 9,
+      "warmup": false,
+      "status": "ok",
+      "reason": null,
+      "skippedReason": null,
+      "timingsMs": {
+        "total": 151.184
+      },
+      "correctness": {
+        "selectedTarget": "chrome-dev",
+        "selectedProfileDirectory": "Default",
+        "connected": true,
+        "connectedMappingCount": 3,
+        "status": "connected",
+        "profileSelectionStatus": "selected",
+        "nativeHostReady": true
+      }
+    },
+    {
+      "caseName": "connection-readiness",
+      "iteration": 9,
+      "warmup": false,
+      "status": "ok",
+      "reason": null,
+      "skippedReason": null,
+      "timingsMs": {
+        "connectionStatus": 147.585,
+        "total": 147.599
+      },
+      "correctness": {
+        "selectedTarget": "chrome-dev",
+        "selectedProfileDirectory": "Default",
+        "connected": true,
+        "connectedMappingCount": 3,
+        "status": "connected",
+        "profileSelectionStatus": "selected",
+        "nativeHostReady": true
+      }
+    },
+    {
+      "caseName": "runtime-proof",
+      "iteration": 9,
+      "warmup": false,
+      "status": "skipped",
+      "reason": null,
+      "skippedReason": "trusted-runtime-agent-unavailable-outside-node-repl",
+      "timingsMs": {
+        "total": 0.013
+      },
+      "correctness": {
+        "selectedTarget": null,
+        "selectedProfileDirectory": null
+      }
+    },
+    {
+      "caseName": "runtime-tab-create",
+      "iteration": 9,
+      "warmup": false,
+      "status": "skipped",
+      "reason": null,
+      "skippedReason": "trusted-runtime-agent-unavailable-outside-node-repl",
+      "timingsMs": {
+        "total": 0.003
+      },
+      "correctness": {
+        "selectedTarget": null,
+        "selectedProfileDirectory": null
+      }
+    },
+    {
+      "caseName": "process-snapshot",
+      "iteration": 10,
+      "warmup": false,
+      "status": "ok",
+      "reason": null,
+      "skippedReason": null,
+      "timingsMs": {
+        "total": 85.523
+      },
+      "correctness": {
+        "selectedTarget": null,
+        "selectedProfileDirectory": null,
+        "processCount": 1341
+      }
+    },
+    {
+      "caseName": "select-browser",
+      "iteration": 10,
+      "warmup": false,
+      "status": "ok",
+      "reason": "connected-browser",
+      "skippedReason": null,
+      "timingsMs": {
+        "total": 381.217
+      },
+      "correctness": {
+        "selectedTarget": "chrome-dev",
+        "selectedProfileDirectory": "Default",
+        "candidateCount": 8
+      }
+    },
+    {
+      "caseName": "connection-status",
+      "iteration": 10,
+      "warmup": false,
+      "status": "ok",
+      "reason": null,
+      "skippedReason": null,
+      "timingsMs": {
+        "total": 152.787
+      },
+      "correctness": {
+        "selectedTarget": "chrome-dev",
+        "selectedProfileDirectory": "Default",
+        "connected": true,
+        "connectedMappingCount": 3,
+        "status": "connected",
+        "profileSelectionStatus": "selected",
+        "nativeHostReady": true
+      }
+    },
+    {
+      "caseName": "connection-readiness",
+      "iteration": 10,
+      "warmup": false,
+      "status": "ok",
+      "reason": null,
+      "skippedReason": null,
+      "timingsMs": {
+        "connectionStatus": 151.414,
+        "total": 151.429
+      },
+      "correctness": {
+        "selectedTarget": "chrome-dev",
+        "selectedProfileDirectory": "Default",
+        "connected": true,
+        "connectedMappingCount": 3,
+        "status": "connected",
+        "profileSelectionStatus": "selected",
+        "nativeHostReady": true
+      }
+    },
+    {
+      "caseName": "runtime-proof",
+      "iteration": 10,
+      "warmup": false,
+      "status": "skipped",
+      "reason": null,
+      "skippedReason": "trusted-runtime-agent-unavailable-outside-node-repl",
+      "timingsMs": {
+        "total": 0.012
+      },
+      "correctness": {
+        "selectedTarget": null,
+        "selectedProfileDirectory": null
+      }
+    },
+    {
+      "caseName": "runtime-tab-create",
+      "iteration": 10,
+      "warmup": false,
+      "status": "skipped",
+      "reason": null,
+      "skippedReason": "trusted-runtime-agent-unavailable-outside-node-repl",
+      "timingsMs": {
+        "total": 0.004
+      },
+      "correctness": {
+        "selectedTarget": null,
+        "selectedProfileDirectory": null
+      }
+    }
+  ],
+  "summary": {
+    "process-snapshot": {
+      "measuredSamples": 10,
+      "failures": 0,
+      "skipped": 0,
+      "medianMs": 84.125,
+      "p95Ms": 86.069,
+      "minMs": 80.884,
+      "maxMs": 86.069
+    },
+    "select-browser": {
+      "measuredSamples": 10,
+      "failures": 0,
+      "skipped": 0,
+      "medianMs": 394.97,
+      "p95Ms": 405.587,
+      "minMs": 376.992,
+      "maxMs": 405.587
+    },
+    "connection-status": {
+      "measuredSamples": 10,
+      "failures": 0,
+      "skipped": 0,
+      "medianMs": 151.948,
+      "p95Ms": 156.609,
+      "minMs": 148.371,
+      "maxMs": 156.609
+    },
+    "connection-readiness": {
+      "measuredSamples": 10,
+      "failures": 0,
+      "skipped": 0,
+      "medianMs": 151.438,
+      "p95Ms": 154.836,
+      "minMs": 147.599,
+      "maxMs": 154.836
+    },
+    "runtime-proof": {
+      "measuredSamples": 0,
+      "failures": 0,
+      "skipped": 10,
+      "medianMs": null,
+      "p95Ms": null,
+      "minMs": null,
+      "maxMs": null
+    },
+    "runtime-tab-create": {
+      "measuredSamples": 0,
+      "failures": 0,
+      "skipped": 10,
+      "medianMs": null,
+      "p95Ms": null,
+      "minMs": null,
+      "maxMs": null
+    }
+  }
+}
