@@ -32,6 +32,17 @@ import { runRuntimeProof } from "../scripts/lib/runtime-proof-runner.mjs";
 import { chooseBrowserTarget, inspectBrowserTargets } from "../scripts/lib/browser-selection.mjs";
 import { parseArgs, redactBenchmarkResult, runBenchmark } from "../scripts/benchmark-first-tab-latency.mjs";
 
+test("plugin manifest version matches package versions", () => {
+  const pluginRoot = path.resolve(new URL("..", import.meta.url).pathname);
+  const marketplaceRoot = path.resolve(pluginRoot, "../..");
+  const manifest = JSON.parse(readFileSync(path.join(pluginRoot, ".codex-plugin/plugin.json"), "utf8"));
+  const pluginPackage = JSON.parse(readFileSync(path.join(pluginRoot, "package.json"), "utf8"));
+  const marketplacePackage = JSON.parse(readFileSync(path.join(marketplaceRoot, "package.json"), "utf8"));
+
+  assert.equal(manifest.version, pluginPackage.version);
+  assert.equal(manifest.version, marketplacePackage.version);
+});
+
 test("defines every required browser target", () => {
   assert.deepEqual(targetIds(), [
     "chrome-stable",
